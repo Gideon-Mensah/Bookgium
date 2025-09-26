@@ -12,38 +12,11 @@ pip install -r requirements.txt
 echo "2. Collecting static files..."
 python manage.py collectstatic --noinput
 
-echo "3. Running shared schema migrations (creates django-tenants tables)..."
+echo "3. Running database migrations (shared schemas)..."
 python manage.py migrate_schemas --shared
 
-echo "4. Creating default tenant if it doesn't exist..."
-python -c "
-import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bookgium.settings')
-import django
-django.setup()
-from clients.models import Client, Domain
-
-# Check if default tenant exists
-try:
-    client = Client.objects.get(schema_name='public')
-    print('Default tenant already exists')
-except Client.DoesNotExist:
-    print('Creating default tenant...')
-    # Create default tenant
-    client = Client.objects.create(
-        schema_name='bookgium',
-        name='Bookgium Default',
-        description='Default tenant for Bookgium'
-    )
-    
-    # Create domain for the tenant
-    domain = Domain.objects.create(
-        domain='bookgium.onrender.com',
-        tenant=client,
-        is_primary=True
-    )
-    print(f'Created tenant: {client.name} with domain: {domain.domain}')
-"
+echo "4. Setting up initial tenant and domain..."
+python manage.py setup_initial_tenant --domain="bookgium.onrender.com" --name="Bookgium Default" --schema="bookgium"
 
 echo "5. Running all schema migrations..."
 python manage.py migrate_schemas
