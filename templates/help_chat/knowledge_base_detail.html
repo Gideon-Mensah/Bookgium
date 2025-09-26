@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static help_chat_extras %}
+{% load chat_extras %}
+
+{% block title %}{{ entry.title }} - Knowledge Base - Bookgium{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'help_chat:knowledge_base' %}">Knowledge Base</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'help_chat:knowledge_base' %}?category={{ entry.category }}">
+                            {{ entry.get_category_display }}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ entry.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <span class="badge bg-primary mb-2">{{ entry.get_category_display }}</span>
+                            <h1 class="h3 mb-0">{{ entry.title }}</h1>
+                        </div>
+                        <div class="text-muted">
+                            <small>
+                                <i class="fas fa-eye me-1"></i>{{ entry.view_count }} views
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            Last updated {{ entry.updated_at|timesince }} ago
+                        </small>
+                    </div>
+                    
+                    <div class="content">
+                        {{ entry.content|linebreaks }}
+                    </div>
+                    
+                    {% if entry.keywords %}
+                    <div class="mt-4 pt-3 border-top">
+                        <h6>Keywords:</h6>
+                        {% for keyword in entry.keywords|split:"," %}
+                        <span class="badge bg-light text-dark me-1">{{ keyword|strip_spaces }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Related Articles -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Need More Help?</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <a href="{% url 'help_chat:chat' %}" class="btn btn-primary w-100 mb-2">
+                                <i class="fas fa-robot me-2"></i>Ask AI Assistant
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{% url 'help_chat:faq' %}" class="btn btn-outline-primary w-100 mb-2">
+                                <i class="fas fa-question-circle me-2"></i>Browse FAQ
+                            </a>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0 mt-2">
+                        <small>
+                            Can't find what you're looking for? Our AI assistant can provide personalized help
+                            and answer specific questions about your Bookgium workflow.
+                        </small>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'help_chat:chat' %}?message=Tell me more about {{ entry.title|urlencode }}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-comments me-2"></i>Discuss with AI
+                        </a>
+                        <a href="{% url 'help_chat:knowledge_base' %}?category={{ entry.category }}" 
+                           class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-list me-2"></i>More in {{ entry.get_category_display }}
+                        </a>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="copyUrl()">
+                            <i class="fas fa-share me-2"></i>Share Article
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Article Info -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Article Information</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <strong>Category:</strong><br>
+                            <span class="badge bg-primary">{{ entry.get_category_display }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Views:</strong> {{ entry.view_count }}
+                        </li>
+                        <li class="mb-2">
+                            <strong>Created:</strong><br>
+                            <small class="text-muted">{{ entry.created_at|date:"F j, Y" }}</small>
+                        </li>
+                        <li>
+                            <strong>Last Updated:</strong><br>
+                            <small class="text-muted">{{ entry.updated_at|date:"F j, Y" }}</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyUrl() {
+    navigator.clipboard.writeText(window.location.href).then(function() {
+        // Show success message
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check me-2"></i>Copied!';
+        btn.classList.add('btn-success');
+        btn.classList.remove('btn-outline-info');
+        
+        setTimeout(function() {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-info');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Could not copy URL: ', err);
+    });
+}
+</script>
+{% endblock %}

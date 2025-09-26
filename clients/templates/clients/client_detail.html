@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load client_extras %}
+
+{% block title %}{{ client.name }} - Client Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">{{ client.name }}</h1>
+            <p class="text-muted">Client Details</p>
+        </div>
+        <div>
+            <a href="{% url 'clients:list' %}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left me-2"></i>Back to List
+            </a>
+            <a href="{% url 'clients:edit' client.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i>Edit Client
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Client Information -->
+        <div class="col-md-8">
+            <!-- Basic Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-building me-2"></i>Basic Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Organization Name</h6>
+                            <p class="mb-3">{{ client.name }}</p>
+                            
+                            <h6 class="text-muted">Email</h6>
+                            <p class="mb-3">
+                                <a href="mailto:{{ client.email }}">{{ client.email }}</a>
+                            </p>
+                            
+                            {% if client.phone %}
+                            <h6 class="text-muted">Phone</h6>
+                            <p class="mb-3">
+                                <a href="tel:{{ client.phone }}">{{ client.phone }}</a>
+                            </p>
+                            {% endif %}
+                            
+                            {% if client.website %}
+                            <h6 class="text-muted">Website</h6>
+                            <p class="mb-3">
+                                <a href="{{ client.website }}" target="_blank">{{ client.website }}</a>
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">URL Slug</h6>
+                            <p class="mb-3">{{ client.slug }}</p>
+                            
+                            <h6 class="text-muted">Created</h6>
+                            <p class="mb-3">{{ client.created_on|date:"M d, Y at g:i A" }}</p>
+                            
+                            <h6 class="text-muted">Last Updated</h6>
+                            <p class="mb-3">{{ client.updated_on|date:"M d, Y at g:i A" }}</p>
+                            
+                            {% if client.account_manager %}
+                            <h6 class="text-muted">Account Manager</h6>
+                            <p class="mb-3">{{ client.account_manager.get_full_name|default:client.account_manager.username }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if client.description %}
+                    <div class="mt-3">
+                        <h6 class="text-muted">Description</h6>
+                        <p>{{ client.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Address Information -->
+            {% if client.address_line1 or client.city or client.state %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-map-marker-alt me-2"></i>Address Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if client.address_line1 %}
+                        <p class="mb-1">{{ client.address_line1 }}</p>
+                    {% endif %}
+                    {% if client.address_line2 %}
+                        <p class="mb-1">{{ client.address_line2 }}</p>
+                    {% endif %}
+                    {% if client.city or client.state or client.postal_code %}
+                        <p class="mb-1">
+                            {% if client.city %}{{ client.city }}{% endif %}{% if client.city and client.state %}, {% endif %}{% if client.state %}{{ client.state }}{% endif %}{% if client.postal_code %} {{ client.postal_code }}{% endif %}
+                        </p>
+                    {% endif %}
+                    {% if client.country %}
+                        <p class="mb-0">{{ client.country }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Internal Notes -->
+            {% if client.notes %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-sticky-note me-2"></i>Internal Notes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ client.notes|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Status Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Status & Subscription
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-muted">Status</h6>
+                        <span class="badge bg-{% if client.subscription_status == 'active' %}success{% elif client.subscription_status == 'trial' %}warning{% elif client.subscription_status == 'expired' %}danger{% else %}secondary{% endif %} fs-6">
+                            {{ client.get_subscription_status_display }}
+                        </span>
+                        {% if not client.is_active %}
+                            <br><span class="badge bg-danger mt-1">Inactive</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-muted">Plan Type</h6>
+                        <span class="badge bg-info fs-6">{{ client.get_plan_type_display }}</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-muted">Currency</h6>
+                        <p class="mb-0">
+                            <span class="me-2">{{ client.currency|currency_symbol }}</span>
+                            <small class="text-muted">{{ client.get_currency_display }}</small>
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-muted">Monthly Fee</h6>
+                        <h4 class="text-success">{{ client.monthly_fee|format_currency:client.currency }}</h4>
+                        <small class="text-muted">{{ client.get_currency_display }}</small>
+                    </div>
+
+                    {% if client.paid_until %}
+                    <div class="mb-3">
+                        <h6 class="text-muted">Paid Until</h6>
+                        <p class="mb-0">{{ client.paid_until|date:"M d, Y" }}</p>
+                        {% if client.days_until_expiry <= 7 %}
+                            <small class="text-warning">
+                                <i class="fas fa-clock me-1"></i>{{ client.days_until_expiry }} days remaining
+                            </small>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if client.on_trial and client.trial_ends %}
+                    <div class="mb-3">
+                        <h6 class="text-muted">Trial Ends</h6>
+                        <p class="mb-0">{{ client.trial_ends|date:"M d, Y" }}</p>
+                        <small class="text-info">
+                            <i class="fas fa-calendar me-1"></i>{{ client.trial_ends|timeuntil }} remaining
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Usage Limits -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Usage Limits
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Max Users</span>
+                            <strong>{{ client.max_users }}</strong>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Max Invoices/Month</span>
+                            <strong>{{ client.max_invoices_per_month }}</strong>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Max Storage</span>
+                            <strong>{{ client.max_storage_gb }} GB</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if client.on_trial %}
+                        <a href="{% url 'clients:extend_trial' client.pk %}" class="btn btn-warning btn-sm w-100 mb-2">
+                            <i class="fas fa-clock me-2"></i>Extend Trial
+                        </a>
+                    {% endif %}
+                    
+                    {% if client.is_active %}
+                        <a href="{% url 'clients:suspend' client.pk %}" class="btn btn-outline-warning btn-sm w-100 mb-2"
+                           onclick="return confirm('Are you sure you want to suspend this client?')">
+                            <i class="fas fa-pause me-2"></i>Suspend Client
+                        </a>
+                    {% else %}
+                        <a href="{% url 'clients:activate' client.pk %}" class="btn btn-outline-success btn-sm w-100 mb-2"
+                           onclick="return confirm('Are you sure you want to activate this client?')">
+                            <i class="fas fa-play me-2"></i>Activate Client
+                        </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'clients:domains' client.pk %}" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                        <i class="fas fa-globe me-2"></i>Manage Domains
+                    </a>
+                    
+                    <a href="{% url 'clients:contacts' client.pk %}" class="btn btn-outline-info btn-sm w-100 mb-2">
+                        <i class="fas fa-address-book me-2"></i>Manage Contacts
+                    </a>
+                    
+                    <a href="{% url 'clients:delete' client.pk %}" class="btn btn-outline-danger btn-sm w-100"
+                       onclick="return confirm('Are you sure you want to deactivate this client?')">
+                        <i class="fas fa-trash me-2"></i>Deactivate Client
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

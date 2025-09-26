@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Audit Dashboard - Bookgium{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-shield-alt me-2"></i>Audit Dashboard</h2>
+                <div>
+                    <a href="{% url 'audit:log_list' %}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-list me-1"></i>View All Logs
+                    </a>
+                    <a href="{% url 'audit:session_list' %}" class="btn btn-outline-info">
+                        <i class="fas fa-users me-1"></i>User Sessions
+                    </a>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5>Total Logs</h5>
+                                    <h3>{{ total_logs|default:0 }}</h3>
+                                </div>
+                                <i class="fas fa-clipboard-list fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5>Today</h5>
+                                    <h3>{{ logs_today|default:0 }}</h3>
+                                </div>
+                                <i class="fas fa-calendar-day fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5>This Week</h5>
+                                    <h3>{{ logs_week|default:0 }}</h3>
+                                </div>
+                                <i class="fas fa-calendar-week fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5>Active Sessions</h5>
+                                    <h3>{{ active_sessions|default:0 }}</h3>
+                                </div>
+                                <i class="fas fa-user-clock fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Recent Activity -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-clock me-2"></i>Recent Activity</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_logs %}
+                                <div class="list-group list-group-flush">
+                                    {% for log in recent_logs %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">
+                                                {% if log.action == 'create' %}
+                                                    <span class="badge bg-success me-2">CREATE</span>
+                                                {% elif log.action == 'update' %}
+                                                    <span class="badge bg-warning me-2">UPDATE</span>
+                                                {% elif log.action == 'delete' %}
+                                                    <span class="badge bg-danger me-2">DELETE</span>
+                                                {% elif log.action == 'login' %}
+                                                    <span class="badge bg-info me-2">LOGIN</span>
+                                                {% elif log.action == 'logout' %}
+                                                    <span class="badge bg-secondary me-2">LOGOUT</span>
+                                                {% else %}
+                                                    <span class="badge bg-primary me-2">{{ log.action|upper }}</span>
+                                                {% endif %}
+                                                {{ log.object_repr|truncatechars:30 }}
+                                            </h6>
+                                            <small>{{ log.timestamp|timesince }} ago</small>
+                                        </div>
+                                        <p class="mb-1">{{ log.user.get_full_name|default:log.user.username }}</p>
+                                        <small>{{ log.notes|truncatechars:50 }}</small>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a href="{% url 'audit:log_list' %}" class="btn btn-outline-primary btn-sm">
+                                        View All Logs
+                                    </a>
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center">No recent activity</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Chart -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-line me-2"></i>Activity Chart (Last 30 Days)</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="activityChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <!-- Action Statistics -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-tasks me-2"></i>Top Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if action_stats %}
+                                {% for stat in action_stats %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-capitalize">{{ stat.action }}</span>
+                                    <span class="badge bg-primary">{{ stat.count }}</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">No data available</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Activity -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-users me-2"></i>Most Active Users (This Week)</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if user_stats %}
+                                {% for stat in user_stats %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>{{ stat.user__username }}</span>
+                                    <span class="badge bg-success">{{ stat.count }}</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">No data available</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Model Activity -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-database me-2"></i>Most Modified Models (This Week)</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if model_stats %}
+                                {% for stat in model_stats %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-capitalize">{{ stat.content_type__model }}</span>
+                                    <span class="badge bg-info">{{ stat.count }}</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">No data available</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load chart data
+    fetch('{% url "audit:chart_data" %}')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.daily_activity.map(item => {
+                        const date = new Date(item.date);
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    }),
+                    datasets: [{
+                        label: 'Daily Activity',
+                        data: data.daily_activity.map(item => item.count),
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => console.error('Error loading chart data:', error));
+});
+</script>
+{% endblock %}

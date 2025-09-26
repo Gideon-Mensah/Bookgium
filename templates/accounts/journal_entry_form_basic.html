@@ -1,0 +1,552 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load form_extras %}
+
+{% block title %}New Journal Entry - Bookgium{% endblock %}
+{% block page_title %}New Journal Entry{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/journal.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <form method="post" enctype="multipart/form-data" novalidate id="journal-form">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <!-- Journal Entry Header -->
+      <div class="je-card mb-4">
+        <div class="je-header p-3 d-flex align-items-center justify-content-between">
+          <h5 class="mb-0"><i class="fas fa-book me-2"></i>Create Journal Entry</h5>
+          <span class="je-subtle">All fields autosave on submit</span>
+        </div>
+        <div class="p-3">
+          <div class="row g-3 stack-md">
+            <div class="col-md-3">
+              <div class="form-floating">
+                {{ form.reference|add_class:"form-control" }}
+                <label for="{{ form.reference.id_for_label }}">Reference</label>
+              </div>
+              <div class="form-text">Optional</div>
+              {% for err in form.reference.errors %}
+                <div class="invalid-feedback d-block">{{ err }}</div>
+              {% endfor %}
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating">
+                {{ form.date|add_class:"form-control" }}
+                <label for="{{ form.date.id_for_label }}">Date</label>
+              </div>
+              {% for err in form.date.errors %}
+                <div class="invalid-feedback d-block">{{ err }}</div>
+              {% endfor %}
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                {{ form.description|add_class:"form-control" }}
+                <label for="{{ form.description.id_for_label }}">Description</label>
+              </div>
+              {% for err in form.description.errors %}
+                <div class="invalid-feedback d-block">{{ err }}</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sticky Totals Bar -->
+      <div class="je-totalbar d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex gap-4">
+          <div><span class="je-subtle">Total Debits</span> <strong id="total-debits">0.00</strong></div>
+          <div><span class="je-subtle">Total Credits</span> <strong id="total-credits">0.00</strong></div>
+        </div>
+        <span id="balance-badge" class="badge rounded-pill bg-secondary badge-balance">Unbalanced</span>
+      </div>
+
+      {{ formset.management_form }}
+
+      <div id="formset-container">
+        {% for form_line in formset %}
+          <div class="card mb-3 formset-row">
+            <div class="card-body">
+              {% if form_line.non_field_errors %}
+                <div class="alert alert-danger mb-3">
+                  {{ form_line.non_field_errors }}
+                </div>
+              {% endif %}
+              <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                  <label for="{{ form_line.account.id_for_label }}" class="form-label">Account</label>
+                  {{ form_line.account|add_class:"form-select" }}
+                  {% for err in form_line.account.errors %}
+                    <div class="invalid-feedback d-block">{{ err }}</div>
+                  {% endfor %}
+                </div>
+                <div class="col-md-2">
+                  <label for="{{ form_line.entry_type.id_for_label }}" class="form-label">Type</label>
+                  {{ form_line.entry_type|add_class:"form-select entry-type" }}
+                  {% for err in form_line.entry_type.errors %}
+                    <div class="invalid-feedback d-block">{{ err }}</div>
+                  {% endfor %}
+                </div>
+                <div class="col-md-2">
+                  <label for="{{ form_line.amount.id_for_label }}" class="form-label">Amount</label>
+                  <div class="input-group amount-group">
+                    <span class="input-group-text">{{ currency_symbol|default:"£" }}</span>
+                    {{ form_line.amount|add_class:"form-control amount-field" }}
+                  </div>
+                  {% for err in form_line.amount.errors %}
+                    <div class="invalid-feedback d-block">{{ err }}</div>
+                  {% endfor %}
+                </div>
+                <div class="col-md-3">
+                  <label for="{{ form_line.description.id_for_label }}" class="form-label">Line Description</label>
+                  {{ form_line.description|add_class:"form-control" }}
+                  {% for err in form_line.description.errors %}
+                    <div class="invalid-feedback d-block">{{ err }}</div>
+                  {% endfor %}
+                </div>
+                <div class="col-md-1 d-grid">
+                  <button type="button" class="btn btn-sm btn-soft btn-remove-row" title="Remove line">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Hidden/extra fields -->
+              {% if form_line.id %}{{ form_line.id }}{% endif %}
+              {% if form_line.DELETE %}{{ form_line.DELETE }}{% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Empty form template for JS cloning -->
+      <template id="empty-form-template">
+        <div class="card mb-3 formset-row">
+          <div class="card-body">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-4">
+                <label class="form-label">Account</label>
+                {{ formset.empty_form.account|add_class:"form-select" }}
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Type</label>
+                {{ formset.empty_form.entry_type|add_class:"form-select entry-type" }}
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Amount</label>
+                <div class="input-group amount-group">
+                  <span class="input-group-text">{{ currency_symbol|default:"£" }}</span>
+                  {{ formset.empty_form.amount|add_class:"form-control amount-field" }}
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Line Description</label>
+                {{ formset.empty_form.description|add_class:"form-control" }}
+              </div>
+              <div class="col-md-1 d-grid">
+                <button type="button" class="btn btn-sm btn-soft btn-remove-row" title="Remove line">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+            {{ formset.empty_form.id }}
+            {% if formset.can_delete %}
+              {{ formset.empty_form.DELETE }}
+            {% endif %}
+          </div>
+        </div>
+      </template>
+
+      <!-- Source Documents Section -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h6><i class="fas fa-paperclip me-2"></i>Supporting Documents</h6>
+          <small class="text-muted">Upload receipts, invoices, or other evidence for this journal entry</small>
+        </div>
+        <div class="card-body">
+          {{ document_formset.management_form }}
+          <div id="document-forms">
+            {% for form in document_formset %}
+              <div class="document-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
+                {% if form.instance.pk %}
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0">{{ form.instance.title }}</h6>
+                    {% if form.DELETE %}
+                      <div class="form-check">
+                        {{ form.DELETE }}
+                        <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}">
+                          <i class="fas fa-trash"></i> Delete
+                        </label>
+                      </div>
+                    {% endif %}
+                  </div>
+                {% endif %}
+                
+                {% for hidden in form.hidden_fields %}
+                  {{ hidden }}
+                {% endfor %}
+                
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label class="form-label">{{ form.title.label }}</label>
+                      {{ form.title }}
+                      {% if form.title.errors %}
+                        <div class="text-danger small">{{ form.title.errors }}</div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label class="form-label">{{ form.document_type.label }}</label>
+                      {{ form.document_type }}
+                      {% if form.document_type.errors %}
+                        <div class="text-danger small">{{ form.document_type.errors }}</div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label">{{ form.file.label }}</label>
+                  {{ form.file }}
+                  {% if form.instance.pk and form.instance.file %}
+                    <div class="mt-2">
+                      <small class="text-muted">
+                        Current file: 
+                        <a href="{% url 'accounts:download_source_document' form.instance.pk %}" target="_blank" class="text-decoration-none">
+                          <i class="fas fa-file me-1"></i>{{ form.instance.filename }}
+                        </a>
+                        ({{ form.instance.file_size_formatted }})
+                      </small>
+                    </div>
+                  {% endif %}
+                  {% if form.file.errors %}
+                    <div class="text-danger small">{{ form.file.errors }}</div>
+                  {% endif %}
+                  <small class="form-text text-muted">
+                    Supported formats: PDF, images (JPG, PNG, GIF), Office documents. Max size: 10MB
+                  </small>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label">{{ form.description.label }}</label>
+                  {{ form.description }}
+                  {% if form.description.errors %}
+                    <div class="text-danger small">{{ form.description.errors }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          
+          <div class="text-center">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="add-document-form">
+              <i class="fas fa-plus me-1"></i>Add Another Document
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Compact Action Bar -->
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <button type="button" class="btn btn-outline-primary" id="btn-add-row">
+          <i class="fas fa-plus me-1"></i> Add Line
+        </button>
+        <div class="d-flex gap-2">
+          <a href="{% url 'accounts:journal_entry_list' %}" class="btn btn-light">Back</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i> Save Entry
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Debug Information -->
+<div class="mt-4">
+  <div class="card">
+    <div class="card-header">
+      <h6>Debug Information</h6>
+    </div>
+    <div class="card-body">
+      <p><strong>Formset prefix:</strong> {{ formset.prefix }}</p>
+      <p><strong>Management form:</strong></p>
+      <ul>
+        <li>TOTAL_FORMS: {{ formset.management_form.TOTAL_FORMS.value }}</li>
+        <li>INITIAL_FORMS: {{ formset.management_form.INITIAL_FORMS.value }}</li>
+        <li>MIN_NUM_FORMS: {{ formset.management_form.MIN_NUM_FORMS.value }}</li>
+        <li>MAX_NUM_FORMS: {{ formset.management_form.MAX_NUM_FORMS.value }}</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.min.js"></script>
+<script>
+  (function () {
+    const container = document.getElementById('formset-container');
+    const addBtn = document.getElementById('btn-add-row');
+    const template = document.getElementById('empty-form-template');
+    const totalFormsInput = document.getElementById('id_{{ formset.prefix }}-TOTAL_FORMS');
+    const formEl = document.getElementById('journal-form');
+    const totals = { debitEl: document.getElementById('total-debits'), creditEl: document.getElementById('total-credits') };
+
+    function setBalanceBadge(d, c) {
+      const el = document.getElementById('balance-badge');
+      const diff = Math.abs(d - c);
+      if (diff <= 0.005 && d > 0) {
+        el.textContent = 'Balanced';
+        el.className = 'badge rounded-pill bg-success badge-balance';
+      } else {
+        el.textContent = diff ? `Unbalanced (${diff.toFixed(2)})` : 'Unbalanced';
+        el.className = 'badge rounded-pill bg-warning text-dark badge-balance';
+      }
+    }
+
+    function updateTotals() {
+      let debit = 0.0, credit = 0.0;
+      container.querySelectorAll('.formset-row').forEach(row => {
+        const typeSel = row.querySelector('.entry-type');
+        const amtInput = row.querySelector('.amount-field');
+        if (!typeSel || !amtInput) return;
+        const val = parseFloat(amtInput.value || '0');
+        if (Number.isFinite(val)) {
+          if (typeSel.value === 'DEBIT') debit += val;
+          if (typeSel.value === 'CREDIT') credit += val;
+        }
+      });
+      totals.debitEl.textContent = debit.toFixed(2);
+      totals.creditEl.textContent = credit.toFixed(2);
+      setBalanceBadge(debit, credit);
+      return { debit, credit };
+    }
+
+    function renumberForms() {
+      const prefix = "{{ formset.prefix }}";
+      const rows = container.querySelectorAll('.formset-row');
+      rows.forEach((row, index) => {
+        row.querySelectorAll('input, select, textarea, label').forEach(el => {
+          ['name', 'id', 'for'].forEach(attr => {
+            if (el.hasAttribute(attr)) {
+              el.setAttribute(attr, el.getAttribute(attr).replace(new RegExp(prefix + '-\\d+-', 'g'), prefix + '-' + index + '-'));
+            }
+          });
+        });
+      });
+      totalFormsInput.value = rows.length.toString();
+    }
+
+    function addRow() {
+      const clone = template.content.cloneNode(true);
+      // Replace __prefix__ with current index
+      const index = parseInt(totalFormsInput.value, 10);
+      clone.querySelectorAll('input, select, textarea, label').forEach(el => {
+        ['name', 'id', 'for', 'value'].forEach(attr => {
+          if (el.hasAttribute(attr)) {
+            el.setAttribute(attr, el.getAttribute(attr).replace(/__prefix__/g, index));
+          }
+        });
+      });
+      container.appendChild(clone);
+      totalFormsInput.value = (index + 1).toString();
+      updateTotals();
+    }
+
+    function removeRow(btn) {
+      const row = btn.closest('.formset-row');
+      if (!row) return;
+      // If DELETE checkbox exists, tick it and hide the row to keep indices stable
+      const del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+      if (del) {
+        del.checked = true;
+        row.style.display = 'none';
+      } else {
+        row.remove();
+        renumberForms();
+      }
+      updateTotals();
+    }
+
+    // Events
+    addBtn.addEventListener('click', addRow);
+
+    container.addEventListener('click', function (e) {
+      if (e.target.closest('.btn-remove-row')) {
+        removeRow(e.target.closest('.btn-remove-row'));
+      }
+    });
+
+    container.addEventListener('input', function (e) {
+      if (e.target.matches('.amount-field, .entry-type')) {
+        updateTotals();
+      }
+    });
+
+    // Auto color amount by type
+    container.addEventListener('change', e => {
+      if (e.target.matches('.entry-type')) {
+        e.target.setAttribute('data-type', e.target.value);
+      }
+    });
+
+    // Enter to add next row when typing in last amount
+    container.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' && e.target.classList.contains('amount-field')) {
+        e.preventDefault(); 
+        document.getElementById('btn-add-row').click();
+        const rows = container.querySelectorAll('.formset-row');
+        setTimeout(() => {
+          const lastRow = rows[rows.length-1];
+          const firstInput = lastRow.querySelector('select, input');
+          if (firstInput) firstInput.focus();
+        }, 100);
+      }
+    });
+
+    // Validate debits == credits on submit
+    formEl.addEventListener('submit', function (e) {
+      const { debit, credit } = updateTotals();
+      if (Math.abs(debit - credit) > 0.005) {
+        e.preventDefault();
+        alert('Debits and Credits must balance before saving.');
+      }
+    });
+
+    // Initialize Select2 for existing rows and new rows
+    $(function(){
+      function enhanceRow($row){
+        $row.find('select').each(function(){
+          $(this).select2({ 
+            width: '100%', 
+            theme: 'bootstrap4', 
+            placeholder: '— Select —', 
+            allowClear: true 
+          });
+        });
+      }
+      
+      // Initial rows
+      $('#formset-container .formset-row').each(function(){ 
+        enhanceRow($(this)); 
+      });
+
+      // When new rows are added
+      const observer = new MutationObserver(function(mutations){
+        mutations.forEach(mutation => {
+          mutation.addedNodes.forEach(node => {
+            if(node.classList && node.classList.contains('formset-row')) {
+              enhanceRow($(node));
+            }
+          });
+        });
+      });
+      observer.observe(container, { childList: true });
+    });
+
+    // Initial totals and data-type attributes
+    updateTotals();
+    container.querySelectorAll('.entry-type').forEach(select => {
+      if (select.value) {
+        select.setAttribute('data-type', select.value);
+      }
+    });
+  })();
+
+  // Document formset management
+  document.addEventListener('DOMContentLoaded', function() {
+    const documentFormsContainer = document.getElementById('document-forms');
+    const addDocumentBtn = document.getElementById('add-document-form');
+    const totalFormsInput = document.querySelector('[name$="-TOTAL_FORMS"]');
+    
+    if (addDocumentBtn && documentFormsContainer && totalFormsInput) {
+      // Get the empty form template
+      const emptyFormTemplate = documentFormsContainer.querySelector('.document-form:last-child');
+      
+      addDocumentBtn.addEventListener('click', function() {
+        const currentFormCount = parseInt(totalFormsInput.value);
+        const maxForms = parseInt(document.querySelector('[name$="-MAX_NUM_FORMS"]').value) || 5;
+        
+        if (currentFormCount >= maxForms) {
+          alert('Maximum number of documents reached.');
+          return;
+        }
+        
+        // Clone the template and update indices
+        const newForm = emptyFormTemplate.cloneNode(true);
+        const newFormIndex = currentFormCount;
+        
+        // Update form index attribute
+        newForm.setAttribute('data-form-index', newFormIndex);
+        
+        // Update all input names and IDs
+        const inputs = newForm.querySelectorAll('input, select, textarea');
+        inputs.forEach(function(input) {
+          const name = input.getAttribute('name');
+          const id = input.getAttribute('id');
+          
+          if (name) {
+            input.setAttribute('name', name.replace(/-\d+-/, `-${newFormIndex}-`));
+          }
+          if (id) {
+            input.setAttribute('id', id.replace(/-\d+-/, `-${newFormIndex}-`));
+          }
+          
+          // Clear values for new form
+          if (input.type !== 'hidden') {
+            input.value = '';
+          }
+        });
+        
+        // Update labels
+        const labels = newForm.querySelectorAll('label');
+        labels.forEach(function(label) {
+          const forAttr = label.getAttribute('for');
+          if (forAttr) {
+            label.setAttribute('for', forAttr.replace(/-\d+-/, `-${newFormIndex}-`));
+          }
+        });
+        
+        // Add to container
+        documentFormsContainer.appendChild(newForm);
+        
+        // Update total forms count
+        totalFormsInput.value = currentFormCount + 1;
+        
+        // Show delete buttons if more than one form
+        updateDeleteButtons();
+      });
+    }
+    
+    function updateDeleteButtons() {
+      const forms = documentFormsContainer.querySelectorAll('.document-form');
+      forms.forEach(function(form, index) {
+        const deleteCheckbox = form.querySelector('[name$="-DELETE"]');
+        if (deleteCheckbox) {
+          deleteCheckbox.closest('.form-check').style.display = forms.length > 1 ? 'block' : 'none';
+        }
+      });
+    }
+    
+    // Initial setup
+    updateDeleteButtons();
+  });
+
+</script>
+{% endblock %}

@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Balance Sheet - Reports{% endblock %}
+{% block page_title %}Balance Sheet{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Screen-only controls -->
+<div class="row mb-4 screen-only">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3>Balance Sheet</h3>
+                <p class="text-muted mb-0">As of {{ as_of_date|date:"F d, Y" }}</p>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-primary" onclick="window.print()">
+                    <i class="fas fa-print me-1"></i>Print
+                </button>
+                <button type="button" class="btn btn-outline-success" onclick="exportToExcel()">
+                    <i class="fas fa-file-excel me-1"></i>Excel
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filtersModal">
+                    <i class="fas fa-filter me-1"></i>Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Print-only header -->
+<div class="report-header print-only">
+    <div class="company-name">Bookgium</div>
+    <div class="report-title">Balance Sheet</div>
+    <div class="report-period">As of {{ as_of_date|date:"F d, Y" }}</div>
+</div>
+
+{% if not is_balanced %}
+<div class="alert alert-warning screen-only" role="alert">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Warning:</strong> The balance sheet does not balance. Assets ({{ currency_symbol }}{{ total_assets|floatformat:2 }}) 
+    do not equal Liabilities + Equity ({{ currency_symbol }}{{ total_liabilities_and_equity|floatformat:2 }}). Please review your accounts.
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Assets -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">ASSETS</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <tbody>
+                            {% for asset in assets_data %}
+                            <tr>
+                                <td>
+                                    <strong>{{ asset.account.code }}</strong> - {{ asset.account.name }}
+                                </td>
+                                <td class="text-end">{{ currency_symbol }}{{ asset.amount|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-muted">No asset accounts found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-dark">
+                            <tr>
+                                <th>TOTAL ASSETS</th>
+                                <th class="text-end">{{ currency_symbol }}{{ total_assets|floatformat:2 }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Liabilities & Equity -->
+    <div class="col-md-6">
+        <!-- Liabilities -->
+        <div class="card mb-3">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">LIABILITIES</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <tbody>
+                            {% for liability in liabilities_data %}
+                            <tr>
+                                <td>
+                                    <strong>{{ liability.account.code }}</strong> - {{ liability.account.name }}
+                                </td>
+                                <td class="text-end">{{ currency_symbol }}{{ liability.amount|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-muted">No liability accounts found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th>Total Liabilities</th>
+                                <th class="text-end">{{ currency_symbol }}{{ total_liabilities|floatformat:2 }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Equity -->
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0">EQUITY</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <tbody>
+                            {% for equity in equity_data %}
+                            <tr>
+                                <td>
+                                    <strong>{{ equity.account.code }}</strong> - {{ equity.account.name }}
+                                </td>
+                                <td class="text-end">{{ currency_symbol }}{{ equity.amount|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-muted">No equity accounts found</td>
+                            </tr>
+                            {% endfor %}
+                            
+                            <!-- Retained Earnings -->
+                            {% if retained_earnings != 0 %}
+                            <tr>
+                                <td><strong>Retained Earnings</strong></td>
+                                <td class="text-end">{{ currency_symbol }}{{ retained_earnings|floatformat:2 }}</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th>Total Equity</th>
+                                <th class="text-end">{{ currency_symbol }}{{ total_equity|floatformat:2 }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Liabilities + Equity -->
+        <div class="card mt-3">
+            <div class="card-body bg-dark text-white">
+                <div class="d-flex justify-content-between">
+                    <strong>TOTAL LIABILITIES + EQUITY</strong>
+                    <strong>{{ currency_symbol }}{{ total_liabilities_and_equity|floatformat:2 }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Balance Check -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card {% if is_balanced %}border-success{% else %}border-danger{% endif %}">
+            <div class="card-body text-center">
+                {% if is_balanced %}
+                    <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                    <h5 class="text-success">Balance Sheet is Balanced</h5>
+                    <p class="text-muted">Assets equal Liabilities + Equity</p>
+                {% else %}
+                    <i class="fas fa-exclamation-triangle text-danger fa-2x mb-2"></i>
+                    <h5 class="text-danger">Balance Sheet is NOT Balanced</h5>
+                    <p class="text-muted">
+                        Difference: {{ currency_symbol }}{{ balance_difference|floatformat:2 }}
+                        <br>
+                        Please review your account entries and ensure all transactions are properly recorded.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Modal -->
+<div class="modal fade" id="filtersModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Filter Balance Sheet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="get">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="as_of_date" class="form-label">As of Date</label>
+                        <input type="date" class="form-control" name="as_of_date" value="{{ as_of_date|date:'Y-m-d' }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportToExcel() {
+    let csv = 'Account,Amount,Type\n';
+    csv += 'ASSETS,\n';
+    {% for asset in assets_data %}
+    csv += '"{{ asset.account.name }}","${{ asset.amount|floatformat:2 }}","Asset"\n';
+    {% endfor %}
+    csv += 'Total Assets,"${{ total_assets|floatformat:2 }}",\n';
+    csv += 'LIABILITIES,\n';
+    {% for liability in liabilities_data %}
+    csv += '"{{ liability.account.name }}","${{ liability.amount|floatformat:2 }}","Liability"\n';
+    {% endfor %}
+    csv += 'Total Liabilities,"${{ total_liabilities|floatformat:2 }}",\n';
+    csv += 'EQUITY,\n';
+    {% for equity in equity_data %}
+    csv += '"{{ equity.account.name }}","${{ equity.amount|floatformat:2 }}","Equity"\n';
+    {% endfor %}
+    {% if retained_earnings != 0 %}
+    csv += 'Retained Earnings,"${{ retained_earnings|floatformat:2 }}","Equity"\n';
+    {% endif %}
+    csv += 'Total Equity,"${{ total_equity|floatformat:2 }}",';
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'balance_sheet_{{ as_of_date|date:"Y_m_d" }}.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+</script>
+
+<style>
+@media print {
+    .btn-group, .modal, .modal-backdrop {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+    
+    .row {
+        page-break-inside: avoid;
+    }
+}
+
+.table th, .table td {
+    border: none;
+    padding: 0.3rem 0.5rem;
+}
+
+.table tfoot th {
+    border-top: 2px solid #000;
+}
+</style>
+{% endblock %}

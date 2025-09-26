@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Aged Receivables - Reports{% endblock %}
+{% block page_title %}Aged Receivables{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3>Aged Receivables Report</h3>
+                <p class="text-muted mb-0">As of {{ as_of_date|date:"F d, Y" }}</p>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-primary" onclick="window.print()">
+                    <i class="fas fa-print me-1"></i>Print
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filtersModal">
+                    <i class="fas fa-filter me-1"></i>Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Aging Summary -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Aging Summary</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Current (0-30 days)</th>
+                                <th>31-60 days</th>
+                                <th>61-90 days</th>
+                                <th>91+ days</th>
+                                <th class="bg-warning text-dark">Total Outstanding</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-end">
+                                    <strong>{{ currency_symbol }}{{ totals.current|floatformat:2 }}</strong>
+                                </td>
+                                <td class="text-end">
+                                    <strong>{{ currency_symbol }}{{ totals.1_30|floatformat:2 }}</strong>
+                                </td>
+                                <td class="text-end">
+                                    <strong>{{ currency_symbol }}{{ totals.31_60|floatformat:2 }}</strong>
+                                </td>
+                                <td class="text-end">
+                                    <strong>{{ currency_symbol }}{{ totals.over_90|floatformat:2 }}</strong>
+                                </td>
+                                <td class="text-end bg-warning">
+                                    <strong>{{ currency_symbol }}{{ total_outstanding|floatformat:2 }}</strong>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Aged Receivables -->
+<div class="card">
+    <div class="card-header">
+        <h6 class="mb-0">Detailed Aged Receivables</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Customer</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th class="text-center">Days Outstanding</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-center">Age Category</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in aged_data %}
+                    <tr class="{% if item.category == 'over_90' %}table-danger{% elif item.category == '61_90' %}table-warning{% elif item.category == '31_60' %}table-info{% endif %}">
+                        <td>
+                            <a href="{% url 'invoices:invoice_detail' item.invoice.pk %}" class="text-decoration-none">
+                                {{ item.invoice.invoice_number }}
+                            </a>
+                        </td>
+                        <td>{{ item.invoice.customer.name|default:"No Customer" }}</td>
+                        <td>{{ item.invoice.issue_date|date:"M d, Y" }}</td>
+                        <td>{{ item.invoice.due_date|date:"M d, Y"|default:"-" }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-{% if item.days_outstanding > 90 %}danger{% elif item.days_outstanding > 60 %}warning{% elif item.days_outstanding > 30 %}info{% else %}secondary{% endif %}">
+                                {{ item.days_outstanding }}
+                            </span>
+                        </td>
+                        <td class="text-end">{{ currency_symbol }}{{ item.invoice.total_amount|floatformat:2 }}</td>
+                        <td class="text-center">
+                            {% if item.category == 'current' %}
+                                <span class="badge bg-success">Current</span>
+                            {% elif item.category == '1_30' %}
+                                <span class="badge bg-primary">1-30 Days</span>
+                            {% elif item.category == '31_60' %}
+                                <span class="badge bg-info">31-60 Days</span>
+                            {% elif item.category == '61_90' %}
+                                <span class="badge bg-warning">61-90 Days</span>
+                            {% else %}
+                                <span class="badge bg-danger">90+ Days</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            No outstanding invoices found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-dark">
+                    <tr>
+                        <th colspan="5">Total Outstanding</th>
+                        <th class="text-end">{{ currency_symbol }}{{ total_outstanding|floatformat:2 }}</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Modal -->
+<div class="modal fade" id="filtersModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Filter Aged Receivables</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="get">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="as_of_date" class="form-label">As of Date</label>
+                        <input type="date" class="form-control" name="as_of_date" value="{{ as_of_date|date:'Y-m-d' }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn-group, .modal, .modal-backdrop {
+        display: none !important;
+    }
+}
+
+.table-responsive {
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}

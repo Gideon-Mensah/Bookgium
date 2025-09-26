@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Bulk Edit Opening Balances{% endblock %}
+
+{% block extra_css %}
+<style>
+    .account-group {
+        margin-bottom: 2rem;
+    }
+    
+    .account-type-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-left: 4px solid;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .account-type-header.asset { border-left-color: #28a745; }
+    .account-type-header.liability { border-left-color: #ffc107; }
+    .account-type-header.equity { border-left-color: #17a2b8; }
+    .account-type-header.income { border-left-color: #007bff; }
+    .account-type-header.expense { border-left-color: #6c757d; }
+    
+    .account-row {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .account-row:last-child {
+        border-bottom: none;
+    }
+    
+    .account-code {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .balance-input {
+        text-align: right;
+    }
+    
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background: white;
+        padding: 1rem 0;
+        border-bottom: 2px solid #dee2e6;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Sticky Header -->
+    <div class="sticky-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-edit me-2"></i>
+                Bulk Edit Opening Balances
+            </h1>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-info" onclick="setAllToZero()">
+                    <i class="fas fa-eraser me-1"></i>Set All to Zero
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+                    <i class="fas fa-undo me-1"></i>Reset
+                </button>
+                <a href="{% url 'accounts:opening_balance_management' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back
+                </a>
+            </div>
+        </div>
+        
+        <!-- Summary Info -->
+        <div class="row mt-3">
+            <div class="col-auto">
+                <span class="badge bg-primary">{{ accounts.count }} accounts</span>
+            </div>
+            <div class="col-auto">
+                <span class="badge bg-info" id="total-balance">Total: {{ currency_symbol }}0.00</span>
+            </div>
+            <div class="col-auto">
+                <span class="badge bg-success" id="changed-count">0 changed</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="post" id="bulk-edit-form">
+        {% csrf_token %}
+        
+        <!-- Opening Date -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <label for="{{ form.opening_date.id_for_label }}" class="form-label">
+                            <strong>Opening Balance Date</strong>
+                        </label>
+                        {{ form.opening_date }}
+                        <div class="form-text">{{ form.opening_date.help_text }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            This date will be applied to all accounts with non-zero opening balances.
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>
+                            Save All Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accounts by Type -->
+        {% regroup accounts by account_type as account_groups %}
+        {% for group in account_groups %}
+        <div class="account-group">
+            <div class="account-type-header {{ group.grouper }}">
+                <h4 class="mb-0">
+                    <i class="fas fa-{% if group.grouper == 'asset' %}coins{% elif group.grouper == 'liability' %}credit-card{% elif group.grouper == 'equity' %}balance-scale{% elif group.grouper == 'income' %}arrow-up{% else %}arrow-down{% endif %} me-2"></i>
+                    {{ group.grouper|title }} Accounts
+                    <span class="badge bg-light text-dark ms-2">{{ group.list|length }}</span>
+                </h4>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    {% for account in group.list %}
+                    {% for field_name, field in form.get_account_fields %}
+                        {% if field.account == account %}
+                        <div class="account-row">
+                            <div class="row align-items-center">
+                                <div class="col-md-1">
+                                    <span class="account-code">{{ account.code }}</span>
+                                </div>
+                                <div class="col-md-5">
+                                    <div>
+                                        <strong>{{ account.name }}</strong>
+                                        {% if account.description %}
+                                        <br><small class="text-muted">{{ account.description|truncatechars:100 }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="input-group">
+                                        <span class="input-group-text">{{ currency_symbol }}</span>
+                                        {{ field }}
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <small class="text-muted">
+                                        Current: {{ currency_symbol }}{{ account.opening_balance|floatformat:2 }}
+                                        {% if account.opening_balance_date %}
+                                        <br>Date: {{ account.opening_balance_date|date:"M d, Y" }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div class="col-md-1 text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-secondary" 
+                                                onclick="copyPreviousValue('{{ field_name }}')" 
+                                                title="Keep current value">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" 
+                                                onclick="setFieldToZero('{{ field_name }}')" 
+                                                title="Set to zero">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <!-- Bottom Action Bar -->
+        <div class="card bg-light">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary" onclick="setAllToZero()">
+                                <i class="fas fa-eraser me-1"></i>Set All to Zero
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="copyCurrentValues()">
+                                <i class="fas fa-copy me-1"></i>Keep Current Values
+                            </button>
+                            <button type="button" class="btn btn-outline-warning" onclick="resetForm()">
+                                <i class="fas fa-undo me-1"></i>Reset Form
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>
+                            Save All Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Changes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>You are about to update opening balances for <strong id="confirm-count">0</strong> accounts.</p>
+                <p>This action cannot be undone. Are you sure you want to continue?</p>
+                <div id="confirm-details" class="mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="confirmSubmit()">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let originalValues = {};
+    let changedFields = new Set();
+    
+    $(document).ready(function() {
+        // Store original values
+        $('input[name^="balance_"]').each(function() {
+            originalValues[this.name] = $(this).val();
+        });
+        
+        // Monitor changes
+        $('input[name^="balance_"]').on('input', function() {
+            updateChangeTracking();
+            updateSummary();
+        });
+        
+        // Initial summary update
+        updateSummary();
+        
+        // Form submission with confirmation
+        $('#bulk-edit-form').on('submit', function(e) {
+            e.preventDefault();
+            showConfirmation();
+        });
+    });
+    
+    function updateChangeTracking() {
+        changedFields.clear();
+        
+        $('input[name^="balance_"]').each(function() {
+            const currentValue = $(this).val() || '0.00';
+            const originalValue = originalValues[this.name] || '0.00';
+            
+            if (parseFloat(currentValue) !== parseFloat(originalValue)) {
+                changedFields.add(this.name);
+                $(this).closest('.account-row').addClass('table-warning');
+            } else {
+                $(this).closest('.account-row').removeClass('table-warning');
+            }
+        });
+    }
+    
+    function updateSummary() {
+        let total = 0;
+        const changedCount = changedFields.size;
+        
+        $('input[name^="balance_"]').each(function() {
+            const value = parseFloat($(this).val() || 0);
+            total += value;
+        });
+        
+        $('#total-balance').text(`Total: {{ currency_symbol }}${total.toFixed(2)}`);
+        $('#changed-count').text(`${changedCount} changed`);
+        
+        // Update badge colors
+        $('#changed-count').removeClass('bg-success bg-warning bg-danger')
+                          .addClass(changedCount === 0 ? 'bg-success' : 
+                                  changedCount < 10 ? 'bg-warning' : 'bg-danger');
+    }
+    
+    function setAllToZero() {
+        if (confirm('Are you sure you want to set all opening balances to zero?')) {
+            $('input[name^="balance_"]').val('0.00').trigger('input');
+        }
+    }
+    
+    function copyCurrentValues() {
+        $('input[name^="balance_"]').each(function() {
+            $(this).val(originalValues[this.name] || '0.00').trigger('input');
+        });
+    }
+    
+    function resetForm() {
+        if (confirm('Are you sure you want to reset all changes?')) {
+            copyCurrentValues();
+        }
+    }
+    
+    function setFieldToZero(fieldName) {
+        $(`input[name="${fieldName}"]`).val('0.00').trigger('input');
+    }
+    
+    function copyPreviousValue(fieldName) {
+        const originalValue = originalValues[fieldName] || '0.00';
+        $(`input[name="${fieldName}"]`).val(originalValue).trigger('input');
+    }
+    
+    function showConfirmation() {
+        const changedCount = changedFields.size;
+        
+        if (changedCount === 0) {
+            alert('No changes have been made.');
+            return;
+        }
+        
+        $('#confirm-count').text(changedCount);
+        
+        // Show details of changes
+        let details = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Account</th><th>Old Balance</th><th>New Balance</th></tr></thead><tbody>';
+        
+        changedFields.forEach(fieldName => {
+            const input = $(`input[name="${fieldName}"]`);
+            const accountName = input.closest('.account-row').find('strong').text();
+            const oldValue = originalValues[fieldName] || '0.00';
+            const newValue = input.val() || '0.00';
+            
+            details += `<tr><td>${accountName}</td><td>{{ currency_symbol }}${oldValue}</td><td>{{ currency_symbol }}${newValue}</td></tr>`;
+        });
+        
+        details += '</tbody></table></div>';
+        $('#confirm-details').html(details);
+        
+        $('#confirmationModal').modal('show');
+    }
+    
+    function confirmSubmit() {
+        $('#confirmationModal').modal('hide');
+        $('#bulk-edit-form').off('submit').submit();
+    }
+</script>
+{% endblock %}

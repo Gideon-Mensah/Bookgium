@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}User Sessions - Bookgium{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-users me-2"></i>User Sessions</h2>
+                <div>
+                    <a href="{% url 'audit:dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filter Form -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-filter me-2"></i>Filter Sessions</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="user" class="form-label">User</label>
+                            <select name="user" class="form-select">
+                                <option value="">All Users</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="is_active" class="form-label">Status</label>
+                            <select name="is_active" class="form-select">
+                                <option value="">All Sessions</option>
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="submit" class="btn btn-primary mt-32">
+                                <i class="fas fa-search me-1"></i>Filter
+                            </button>
+                            <a href="{% url 'audit:session_list' %}" class="btn btn-outline-secondary ms-2 mt-32">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sessions Table -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-user-clock me-2"></i>User Sessions</h5>
+                    <small class="text-muted">{{ sessions|length }} sessions</small>
+                </div>
+                <div class="card-body">
+                    {% if sessions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Login Time</th>
+                                        <th>Logout Time</th>
+                                        <th>Duration</th>
+                                        <th>Status</th>
+                                        <th>IP Address</th>
+                                        <th>User Agent</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for session in sessions %}
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>{{ session.user.get_full_name|default:session.user.username }}</strong><br>
+                                                <small class="text-muted">{{ session.user.username }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small>
+                                                {{ session.login_time|date:"M d, Y" }}<br>
+                                                {{ session.login_time|time:"H:i:s" }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            {% if session.logout_time %}
+                                                <small>
+                                                    {{ session.logout_time|date:"M d, Y" }}<br>
+                                                    {{ session.logout_time|time:"H:i:s" }}
+                                                </small>
+                                            {% else %}
+                                                <em class="text-muted">Still active</em>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small>
+                                                {% if session.duration.days > 0 %}
+                                                    {{ session.duration.days }}d 
+                                                {% endif %}
+                                                {% with total_seconds=session.duration.total_seconds %}
+                                                    {% with hours=total_seconds|floatformat:0|add:0|div:3600|floatformat:0 %}
+                                                        {% with minutes=total_seconds|floatformat:0|add:0|div:60|floatformat:0|add:0|mod:60 %}
+                                                            {% if hours > 0 %}{{ hours }}h {% endif %}{{ minutes }}m
+                                                        {% endwith %}
+                                                    {% endwith %}
+                                                {% endwith %}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            {% if session.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small>{{ session.ip_address|default:"N/A" }}</small>
+                                        </td>
+                                        <td>
+                                            <small>{{ session.user_agent|truncatechars:30|default:"N/A" }}</small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if is_paginated %}
+                        <nav aria-label="Sessions pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">First</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-user-clock fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">No Sessions Found</h4>
+                            <p class="text-muted">No sessions match your current filters.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

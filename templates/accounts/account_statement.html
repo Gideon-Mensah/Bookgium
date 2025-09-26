@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Statement - {{ account.name }} - Bookgium{% endblock %}
+{% block page_title %}Account Statement{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+    .no-print { display: none !important; }
+    .table { font-size: 12px; }
+    .card { border: none !important; box-shadow: none !important; }
+    .print-header { display: block !important; }
+}
+@media screen {
+    .print-header { display: none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Print Header (visible only when printing) -->
+<div class="print-header text-center mb-4">
+    <h2>{{ organization.name }}</h2>
+    <h4>Account Statement</h4>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <div>
+        <h4 class="mb-1">Account Statement</h4>
+        <p class="text-muted mb-0">{{ account.code }} - {{ account.name }}</p>
+    </div>
+    <div>
+        <div class="btn-group me-2" role="group">
+            <button type="button" class="btn btn-outline-primary" onclick="window.print()">
+                <i class="fas fa-print me-1"></i>
+                Print
+            </button>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-download me-1"></i>
+                    Export
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="?{% if request.GET.from_date %}from_date={{ request.GET.from_date }}&{% endif %}{% if request.GET.to_date %}to_date={{ request.GET.to_date }}&{% endif %}export=excel">
+                        <i class="fas fa-file-excel me-2"></i>Excel
+                    </a></li>
+                    <li><a class="dropdown-item" href="?{% if request.GET.from_date %}from_date={{ request.GET.from_date }}&{% endif %}{% if request.GET.to_date %}to_date={{ request.GET.to_date }}&{% endif %}export=csv">
+                        <i class="fas fa-file-csv me-2"></i>CSV
+                    </a></li>
+                    <li><a class="dropdown-item" href="?{% if request.GET.from_date %}from_date={{ request.GET.from_date }}&{% endif %}{% if request.GET.to_date %}to_date={{ request.GET.to_date }}&{% endif %}export=pdf">
+                        <i class="fas fa-file-pdf me-2"></i>PDF
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+        <a href="{% url 'accounts:chart_of_accounts' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>
+            Back to Chart
+        </a>
+    </div>
+</div>
+
+<!-- Account Information Card -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            Account Information
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Account Code:</strong> {{ account.code }}</p>
+                <p><strong>Account Name:</strong> {{ account.name }}</p>
+                <p><strong>Account Type:</strong> 
+                    <span class="badge bg-{% if account.account_type == 'asset' %}success{% elif account.account_type == 'liability' %}warning{% elif account.account_type == 'equity' %}info{% elif account.account_type == 'income' %}primary{% else %}secondary{% endif %}">
+                        {{ account.get_account_type_display }}
+                    </span>
+                </p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Statement Period:</strong> {{ from_date|date:"M d, Y" }} to {{ to_date|date:"M d, Y" }}</p>
+                <p><strong>Opening Balance:</strong> 
+                    <span class="{% if opening_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ currency_symbol }}{{ opening_balance|floatformat:2 }}
+                    </span>
+                </p>
+                <p><strong>Closing Balance:</strong> 
+                    <span class="{% if closing_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ currency_symbol }}{{ closing_balance|floatformat:2 }}
+                    </span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Date Range Filter -->
+<div class="card mb-4 no-print">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="from_date" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="from_date" name="from_date" value="{{ from_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="to_date" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="to_date" name="to_date" value="{{ to_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter me-1"></i>
+                    Filter
+                </button>
+                <a href="{% url 'accounts:account_statement' account.id %}" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-times me-1"></i>
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Transaction Details -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i>
+            Transaction Details
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if transactions %}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Reference</th>
+                        <th class="text-end">Debit</th>
+                        <th class="text-end">Credit</th>
+                        <th class="text-end">Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                    <tr {% if transaction.is_opening %}class="table-info"{% endif %}>
+                        <td>{{ transaction.date|date:"M d, Y" }}</td>
+                        <td>
+                            {{ transaction.description }}
+                            {% if transaction.is_opening %}
+                                <small class="badge bg-info ms-1">Opening</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if transaction.journal_entry_id %}
+                                <a href="{% url 'accounts:journal_entry_detail' transaction.journal_entry_id %}" class="text-decoration-none">
+                                    {{ transaction.reference }}
+                                </a>
+                            {% else %}
+                                {{ transaction.reference }}
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if transaction.debit %}
+                                <span class="text-success">{{ currency_symbol }}{{ transaction.debit|floatformat:2 }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if transaction.credit %}
+                                <span class="text-danger">{{ currency_symbol }}{{ transaction.credit|floatformat:2 }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <strong class="{% if transaction.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ currency_symbol }}{{ transaction.balance|floatformat:2 }}
+                            </strong>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Summary -->
+        <div class="row mt-4">
+            <div class="col-md-6 offset-md-6">
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td><strong>Opening Balance:</strong></td>
+                            <td class="text-end">
+                                <strong class="{% if opening_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ currency_symbol }}{{ opening_balance|floatformat:2 }}
+                                </strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Debits:</strong></td>
+                            <td class="text-end">
+                                <strong class="text-success">{{ currency_symbol }}{{ total_debits|floatformat:2 }}</strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Credits:</strong></td>
+                            <td class="text-end">
+                                <strong class="text-danger">{{ currency_symbol }}{{ total_credits|floatformat:2 }}</strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Period Activity:</strong></td>
+                            <td class="text-end">
+                                <strong class="{% if period_activity >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ currency_symbol }}{{ period_activity|floatformat:2 }}
+                                </strong>
+                            </td>
+                        </tr>
+                        <tr class="border-top">
+                            <td><strong>Closing Balance:</strong></td>
+                            <td class="text-end">
+                                <strong class="{% if closing_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ currency_symbol }}{{ closing_balance|floatformat:2 }}
+                                </strong>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+            <h5>No Transactions Found</h5>
+            <p class="text-muted">There are no transactions for this account in the selected period.</p>
+            <a href="{% url 'accounts:quick_journal_entry_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>
+                Add Transaction
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4 text-center text-muted no-print">
+    <small>Generated on {{ "now"|date:"M d, Y H:i" }}</small>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-submit form when dates change (optional)
+document.addEventListener('DOMContentLoaded', function() {
+    const fromDate = document.getElementById('from_date');
+    const toDate = document.getElementById('to_date');
+    
+    // You can uncomment this to auto-submit on date change
+    // fromDate.addEventListener('change', function() {
+    //     if (toDate.value && fromDate.value <= toDate.value) {
+    //         fromDate.form.submit();
+    //     }
+    // });
+    
+    // toDate.addEventListener('change', function() {
+    //     if (fromDate.value && fromDate.value <= toDate.value) {
+    //         toDate.form.submit();
+    //     }
+    // });
+});
+</script>
+{% endblock %}

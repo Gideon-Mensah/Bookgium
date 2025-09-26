@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Delete Document - Bookgium{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5><i class="fas fa-exclamation-triangle me-2"></i>Confirm Document Deletion</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> This action cannot be undone. The document file will be permanently deleted from the server.
+                    </div>
+
+                    <div class="mb-4">
+                        <h6>Document Details:</h6>
+                        <div class="border rounded p-3 bg-light">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <i class="fas fa-file{% if document.is_pdf %}-pdf text-danger{% elif document.is_image %}-image text-success{% else %} text-muted{% endif %} fa-3x"></i>
+                                </div>
+                                <div class="col-md-9">
+                                    <h6>{{ document.title }}</h6>
+                                    <p class="text-muted mb-1">
+                                        <strong>Type:</strong> {{ document.get_document_type_display }}
+                                    </p>
+                                    <p class="text-muted mb-1">
+                                        <strong>File:</strong> {{ document.filename }}
+                                    </p>
+                                    <p class="text-muted mb-1">
+                                        <strong>Size:</strong> {{ document.file_size_formatted }}
+                                    </p>
+                                    <p class="text-muted mb-1">
+                                        <strong>Uploaded:</strong> {{ document.uploaded_at|date:"F d, Y H:i" }}
+                                        {% if document.uploaded_by %}by {{ document.uploaded_by.get_full_name|default:document.uploaded_by.username }}{% endif %}
+                                    </p>
+                                    {% if document.description %}
+                                        <p class="text-muted mb-0">
+                                            <strong>Description:</strong> {{ document.description }}
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6>Attached to:</h6>
+                        <div class="border rounded p-3 bg-light">
+                            {% if document.transaction %}
+                                <i class="fas fa-receipt me-2"></i>
+                                <strong>Transaction:</strong> {{ document.transaction.description|truncatechars:100 }}
+                                <br>
+                                <small class="text-muted">
+                                    {{ document.transaction.account.name }} • {{ document.transaction.date|date:"M d, Y" }} • 
+                                    {% if document.transaction.transaction_type == 'debit' %}-{% else %}+{% endif %}{{ currency_symbol|default:"$" }}{{ document.transaction.amount|floatformat:2 }}
+                                </small>
+                            {% elif document.journal_entry %}
+                                <i class="fas fa-book me-2"></i>
+                                <strong>Journal Entry:</strong> {{ document.journal_entry.description|truncatechars:100 }}
+                                <br>
+                                <small class="text-muted">
+                                    {% if document.journal_entry.reference %}{{ document.journal_entry.reference }} • {% endif %}
+                                    {{ document.journal_entry.date|date:"M d, Y" }} • 
+                                    {{ currency_symbol|default:"$" }}{{ document.journal_entry.total_debits|floatformat:2 }}
+                                </small>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <p class="text-muted">
+                        Are you sure you want to delete this document? This will only remove the document from the system, 
+                        it will not affect the {{ parent_type }} itself.
+                    </p>
+
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-1"></i>Yes, Delete Document
+                            </button>
+                            <a href="{{ redirect_url }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Journal Entry #{{ journal_entry.id }} - Bookgium{% endblock %}
+{% block page_title %}Journal Entry Details{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Journal Entry #{{ journal_entry.id }}</h4>
+        <p class="text-muted mb-0">{{ journal_entry.date|date:"F d, Y" }}</p>
+    </div>
+    <div>
+        <a href="{% url 'accounts:journal_entry_list' %}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-1"></i>
+            Back to List
+        </a>
+        {% if not journal_entry.is_posted and journal_entry.is_balanced %}
+        <a href="{% url 'accounts:post_journal_entry' journal_entry.pk %}" class="btn btn-success">
+            <i class="fas fa-check me-1"></i>
+            Post Entry
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Journal Entry Details -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-book me-2"></i>Entry Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Description</h6>
+                        <p>{{ journal_entry.description }}</p>
+                        
+                        {% if journal_entry.reference %}
+                        <h6 class="text-muted">Reference</h6>
+                        <p><code>{{ journal_entry.reference }}</code></p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Date</h6>
+                        <p>{{ journal_entry.date|date:"F d, Y" }}</p>
+                        
+                        <h6 class="text-muted">Created By</h6>
+                        <p>{{ journal_entry.created_by.get_full_name|default:journal_entry.created_by.username }}</p>
+                        
+                        <h6 class="text-muted">Created On</h6>
+                        <p>{{ journal_entry.created_at|date:"M d, Y g:i A" }}</p>
+                    </div>
+                </div>
+                
+                {% if journal_entry.notes %}
+                <div class="mt-3">
+                    <h6 class="text-muted">Notes</h6>
+                    <p>{{ journal_entry.notes|linebreaks }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Journal Entry Lines -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Journal Entry Lines
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Account</th>
+                                <th>Description</th>
+                                <th class="text-end">Debit</th>
+                                <th class="text-end">Credit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for line in journal_entry.lines.all %}
+                            <tr>
+                                <td>
+                                    <strong>{{ line.account.code }}</strong> - {{ line.account.name }}
+                                    <br><small class="text-muted">{{ line.account.get_account_type_display }}</small>
+                                </td>
+                                <td>
+                                    {% if line.description %}
+                                        {{ line.description }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if line.entry_type == 'debit' %}
+                                        <strong class="text-success">{{ currency_symbol|default:"$" }}{{ line.amount|floatformat:2 }}</strong>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if line.entry_type == 'credit' %}
+                                        <strong class="text-danger">{{ currency_symbol|default:"$" }}{{ line.amount|floatformat:2 }}</strong>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-secondary">
+                            <tr>
+                                <th colspan="2">Totals</th>
+                                <th class="text-end">
+                                    <strong class="text-success">{{ currency_symbol|default:"$" }}{{ journal_entry.total_debits|floatformat:2 }}</strong>
+                                </th>
+                                <th class="text-end">
+                                    <strong class="text-danger">{{ currency_symbol|default:"$" }}{{ journal_entry.total_credits|floatformat:2 }}</strong>
+                                </th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Status Card -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="text-muted">Entry Status</h6>
+                    {% if journal_entry.is_posted %}
+                        <span class="badge bg-success fs-6">Posted</span>
+                    {% else %}
+                        {% if journal_entry.is_balanced %}
+                            <span class="badge bg-warning fs-6">Ready to Post</span>
+                        {% else %}
+                            <span class="badge bg-danger fs-6">Unbalanced</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <h6 class="text-muted">Balance Check</h6>
+                    {% if journal_entry.is_balanced %}
+                        <p class="text-success mb-0">
+                            <i class="fas fa-check-circle me-1"></i>
+                            Debits = Credits
+                        </p>
+                    {% else %}
+                        <p class="text-danger mb-0">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            Unbalanced Entry
+                        </p>
+                        <small class="text-muted">
+                            Difference: {{ currency_symbol|default:"$" }}{{ debit_credit_diff|floatformat:2 }}
+                        </small>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <h6 class="text-muted">Number of Lines</h6>
+                    <p class="mb-0">{{ journal_entry.lines.count }} entries</p>
+                </div>
+
+                {% if journal_entry.is_posted %}
+                <div class="mb-3">
+                    <h6 class="text-muted">Posted On</h6>
+                    <p class="mb-0">{{ journal_entry.updated_at|date:"M d, Y g:i A" }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        {% if not journal_entry.is_posted %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if journal_entry.is_balanced %}
+                <a href="{% url 'accounts:post_journal_entry' journal_entry.pk %}" 
+                   class="btn btn-success w-100 mb-2">
+                    <i class="fas fa-check me-1"></i>
+                    Post to Ledger
+                </a>
+                {% else %}
+                <p class="text-muted text-center">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Balance the entry before posting
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

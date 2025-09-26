@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}Accounts Dashboard - Bookgium{% endblock %}
+{% block page_title %}Accounts Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <!-- Quick Stats Cards -->
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Accounts</h6>
+                        <h3 class="mb-0">{{ total_accounts }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-list-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Active Accounts</h6>
+                        <h3 class="mb-0">{{ active_accounts }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Transactions</h6>
+                        <h3 class="mb-0">{{ total_transactions }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exchange-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Asset Balance</h6>
+                        <h3 class="mb-0">{{ currency_symbol }}{{ account_summary.asset.total_balance|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-coins fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Account Summary by Type -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Account Summary by Type
+                </h5>
+                <a href="{% url 'accounts:chart_of_accounts' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-eye me-1"></i>
+                    View Chart
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for account_type, data in account_summary.items %}
+                    <div class="col-md-6 mb-3">
+                        <div class="border rounded p-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-capitalize mb-1">{{ account_type }}</h6>
+                                    <small class="text-muted">{{ data.count }} account{{ data.count|pluralize }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <strong class="{% if data.total_balance < 0 %}text-danger{% else %}text-success{% endif %}">
+                                        {{ currency_symbol }}{{ data.total_balance|floatformat:2 }}
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'accounts:quick_journal_entry_create' %}" class="btn btn-success">
+                        <i class="fas fa-bolt me-2"></i>
+                        Quick Entry
+                    </a>
+                    <a href="{% url 'accounts:journal_entry_create' %}" class="btn btn-primary">
+                        <i class="fas fa-book me-2"></i>
+                        New Journal Entry
+                    </a>
+                    <a href="{% url 'accounts:account_create' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        New Account
+                    </a>
+                    <a href="{% url 'accounts:journal_entry_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-list me-2"></i>
+                        Journal Entries
+                    </a>
+                    <a href="{% url 'accounts:chart_of_accounts' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-sitemap me-2"></i>
+                        Chart of Accounts
+                    </a>
+                    {% if user.is_staff %}
+                    <a href="{% url 'accounts:revenue_overview' %}" class="btn btn-outline-warning">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Revenue Analysis
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Recent Journal Entries
+                </h5>
+                <a href="{% url 'accounts:journal_entry_list' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-eye me-1"></i>
+                    View All
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Lines</th>
+                                <th class="text-end">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in recent_transactions %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'accounts:journal_entry_detail' entry.pk %}" class="text-decoration-none">
+                                        {{ entry.reference }}
+                                    </a>
+                                </td>
+                                <td>{{ entry.date|date:"M d, Y" }}</td>
+                                <td>{{ entry.description|truncatechars:50 }}</td>
+                                <td>
+                                    <small class="text-muted">{{ entry.lines.count }} line{{ entry.lines.count|pluralize }}</small>
+                                </td>
+                                <td class="text-end">
+                                    {% if entry.is_posted %}
+                                        <span class="badge bg-success">Posted</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Draft</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No journal entries yet.</p>
+                    <a href="{% url 'accounts:journal_entry_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        Create First Journal Entry
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}Accounts - Bookgium{% endblock %}
+{% block page_title %}Manage Accounts{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <p class="text-muted mb-0">{{ total_accounts }} total accounts ({{ active_accounts }} active)</p>
+    </div>
+    <a href="{% url 'accounts:account_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i>
+        Add Account
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="{{ filter_form.account_type.id_for_label }}" class="form-label">{{ filter_form.account_type.label }}</label>
+                {{ filter_form.account_type }}
+            </div>
+            <div class="col-md-3">
+                <label for="{{ filter_form.is_active.id_for_label }}" class="form-label">{{ filter_form.is_active.label }}</label>
+                {{ filter_form.is_active }}
+            </div>
+            <div class="col-md-4">
+                <label for="{{ filter_form.search.id_for_label }}" class="form-label">{{ filter_form.search.label }}</label>
+                {{ filter_form.search }}
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-search"></i>
+                </button>
+                <a href="{% url 'accounts:account_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Accounts Table -->
+<div class="card">
+    <div class="card-body">
+        {% if accounts %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Parent</th>
+                        <th>Status</th>
+                        <th class="text-end">Opening Balance</th>
+                        <th class="text-end">Current Balance</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for account in accounts %}
+                    <tr>
+                        <td><code class="text-primary">{{ account.code }}</code></td>
+                        <td>
+                                                        <a href="{% url 'accounts:account_detail' account.pk %}" class="text-decoration-none">
+                                <strong>{{ account.name }}</strong>
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if account.account_type == 'asset' %}success{% elif account.account_type == 'liability' %}warning{% elif account.account_type == 'equity' %}info{% elif account.account_type == 'income' %}primary{% else %}secondary{% endif %}">
+                                {{ account.get_account_type_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if account.parent %}
+                                {{ account.parent.name }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if account.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if account.opening_balance %}
+                                <span class="{% if account.opening_balance < 0 %}text-danger{% elif account.opening_balance > 0 %}text-success{% else %}text-muted{% endif %}">
+                                    {{ currency_symbol }}{{ account.opening_balance|floatformat:2 }}
+                                </span>
+                                {% if account.opening_balance_date %}
+                                    <br><small class="text-muted">{{ account.opening_balance_date|date:"M d, Y" }}</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">{{ currency_symbol }}0.00</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <strong class="{% if account.balance < 0 %}text-danger{% elif account.balance > 0 %}text-success{% else %}text-muted{% endif %}">
+                                {{ currency_symbol }}{{ account.balance|floatformat:2 }}
+                            </strong>
+                            {% if account.opening_balance %}
+                                <br><small class="text-muted">
+                                    Activity: {{ currency_symbol }}{{ account.journal_balance|floatformat:2 }}
+                                </small>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'accounts:account_detail' account.pk %}" class="btn btn-outline-primary" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'accounts:account_update' account.pk %}" class="btn btn-outline-secondary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'accounts:account_delete' account.pk %}" class="btn btn-outline-danger" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="Accounts pagination">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.account_type %}&account_type={{ request.GET.account_type }}{% endif %}{% if request.GET.is_active %}&is_active={{ request.GET.is_active }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">&laquo; First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.account_type %}&account_type={{ request.GET.account_type }}{% endif %}{% if request.GET.is_active %}&is_active={{ request.GET.is_active }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Previous</a>
+                    </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                </li>
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.account_type %}&account_type={{ request.GET.account_type }}{% endif %}{% if request.GET.is_active %}&is_active={{ request.GET.is_active }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.account_type %}&account_type={{ request.GET.account_type }}{% endif %}{% if request.GET.is_active %}&is_active={{ request.GET.is_active }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Last &raquo;</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h4>No Accounts Found</h4>
+            <p class="text-muted">No accounts match your current filters.</p>
+            <a href="{% url 'accounts:account_list' %}" class="btn btn-outline-secondary me-2">Clear Filters</a>
+            <a href="{% url 'accounts:account_create' %}" class="btn btn-primary">Add Account</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

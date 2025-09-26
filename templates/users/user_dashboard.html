@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Bookgium{% endblock %}
+
+{% block page_title %}Welcome, {{ user.get_full_name|default:user.username }}!{% endblock %}
+
+{% block content %}
+<!-- Welcome Card -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-gradient-primary text-white shadow">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h4 class="text-white mb-3">
+                            <i class="fas fa-sun me-2"></i>
+                            Good {% now "H" as hour %}{% if hour|add:0 < 12 %}Morning{% elif hour|add:0 < 18 %}Afternoon{% else %}Evening{% endif %}!
+                        </h4>
+                        <p class="text-white-50 mb-0">
+                            You're logged in as <strong>{{ user.get_role_display }}</strong>. 
+                            Here's what you can do today.
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end d-none d-md-block">
+                        <i class="fas fa-chart-line" style="font-size: 4rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-user-circle text-primary" style="font-size: 2.5rem;"></i>
+                </div>
+                <h5 class="card-title">My Profile</h5>
+                <p class="card-text text-muted">View and update your personal information</p>
+                <a href="{% url 'profile' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-eye me-1"></i>
+                    View Profile
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-key text-warning" style="font-size: 2.5rem;"></i>
+                </div>
+                <h5 class="card-title">Change Password</h5>
+                <p class="card-text text-muted">Update your account password for security</p>
+                <a href="{% url 'password_change' %}" class="btn btn-outline-warning">
+                    <i class="fas fa-lock me-1"></i>
+                    Change Password
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-calculator text-info" style="font-size: 2.5rem;"></i>
+                </div>
+                <h5 class="card-title">Accounts</h5>
+                <p class="card-text text-muted">Manage your chart of accounts and transactions</p>
+                <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-info">
+                    <i class="fas fa-calculator me-1"></i>
+                    View Accounts
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-file-invoice text-success" style="font-size: 2.5rem;"></i>
+                </div>
+                <h5 class="card-title">Invoices</h5>
+                <p class="card-text text-muted">Create and manage invoices for your clients</p>
+                <a href="{% url 'invoices:dashboard' %}" class="btn btn-outline-success">
+                    <i class="fas fa-file-invoice me-1"></i>
+                    View Invoices
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-users text-secondary" style="font-size: 2.5rem;"></i>
+                </div>
+                <h5 class="card-title">Customers</h5>
+                <p class="card-text text-muted">Manage your customer database</p>
+                <a href="{% url 'invoices:customer_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-users me-1"></i>
+                    View Customers
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add more quick actions row -->
+<div class="row mb-4">
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-chart-bar text-purple" style="font-size: 2.5rem;"></i>
+                </div>
+                <h5 class="card-title">Reports</h5>
+                <p class="card-text text-muted">View financial reports and analytics</p>
+                <a href="{% url 'invoices:reports' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    View Reports
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-plus-circle text-success" style="font-size: 2.5rem;"></i>
+                </div>
+                <h5 class="card-title">Quick Create</h5>
+                <p class="card-text text-muted">Quickly create new invoices or customers</p>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'invoices:invoice_create' %}" class="btn btn-outline-success btn-sm">Invoice</a>
+                    <a href="{% url 'invoices:customer_create' %}" class="btn btn-outline-info btn-sm">Customer</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Information -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Your Account Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Username</label>
+                            <div class="fw-bold">{{ user.username }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Email</label>
+                            <div class="fw-bold">{{ user.email|default:"Not provided" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Full Name</label>
+                            <div class="fw-bold">{{ user.get_full_name|default:"Not provided" }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Role</label>
+                            <div>
+                                <span class="badge bg-{% if user.role == 'admin' %}primary{% elif user.role == 'accountant' %}warning{% else %}info{% endif %} fs-6">
+                                    {{ user.get_role_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Member Since</label>
+                            <div class="fw-bold">{{ user.date_joined|date:"F d, Y" }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Last Login</label>
+                            <div class="fw-bold">{{ user.last_login|date:"F d, Y g:i A"|default:"Never" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-bell me-2"></i>
+                    Recent Activity
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-4">
+                    <i class="fas fa-clock text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2 mb-0">No recent activity</p>
+                    <small class="text-muted">Your recent actions will appear here</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Help Card -->
+        <div class="card shadow mt-4">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-question-circle me-2"></i>
+                    Need Help?
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Get started with these helpful resources:</p>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <a href="#" class="text-decoration-none">
+                            <i class="fas fa-book-open me-2 text-primary"></i>
+                            User Guide
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="#" class="text-decoration-none">
+                            <i class="fas fa-video me-2 text-primary"></i>
+                            Video Tutorials
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="#" class="text-decoration-none">
+                            <i class="fas fa-life-ring me-2 text-primary"></i>
+                            Support Center
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .card {
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payroll Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border-radius: 0.375rem;
+        transition: transform 0.15s ease-in-out;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .stat-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+    }
+    
+    .bg-primary-gradient {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    }
+    
+    .bg-success-gradient {
+        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    }
+    
+    .bg-warning-gradient {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    }
+    
+    .bg-info-gradient {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Payroll Dashboard</h1>
+                <div class="btn-group">
+                    <a href="{% url 'payroll:employee_create' %}" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Add Employee
+                    </a>
+                    <a href="{% url 'payroll:period_create' %}" class="btn btn-success">
+                        <i class="fas fa-calendar-plus"></i> New Period
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stat-icon bg-primary-gradient me-3">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Active Employees
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_employees }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stat-icon bg-warning-gradient me-3">
+                        <i class="fas fa-user-times"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Inactive Employees
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_inactive }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stat-icon bg-success-gradient me-3">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Current Period Gross
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ currency_symbol }}{{ current_period_stats.total_gross|floatformat:2|default:"0.00" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="stat-icon bg-info-gradient me-3">
+                        <i class="fas fa-hand-holding-usd"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Current Period Net
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ currency_symbol }}{{ current_period_stats.total_net|floatformat:2|default:"0.00" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Current Payroll Period -->
+        <div class="col-lg-8 mb-4">
+            <div class="card dashboard-card">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>Current Payroll Period
+                    </h6>
+                    <a href="{% url 'payroll:period_list' %}" class="btn btn-sm btn-outline-primary">
+                        View All Periods
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if current_period %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="font-weight-bold">{{ current_period.name }}</h5>
+                                <p class="text-muted mb-2">
+                                    <i class="fas fa-calendar-day me-1"></i>
+                                    {{ current_period.start_date|date:"M d, Y" }} - {{ current_period.end_date|date:"M d, Y" }}
+                                </p>
+                                <p class="text-muted mb-3">
+                                    <i class="fas fa-money-check-alt me-1"></i>
+                                    Pay Date: {{ current_period.pay_date|date:"M d, Y" }}
+                                </p>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <div class="btn-group mb-2">
+                                    <a href="{% url 'payroll:period_detail' current_period.pk %}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-eye"></i> View Details
+                                    </a>
+                                    <a href="{% url 'payroll:process_payroll' current_period.pk %}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-cogs"></i> Process Payroll
+                                    </a>
+                                </div>
+                                {% if current_period_stats.employee_count %}
+                                <p class="text-muted small mb-0">
+                                    {{ current_period_stats.employee_count }} employee{{ current_period_stats.employee_count|pluralize }} processed
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Active Payroll Period</h5>
+                            <p class="text-muted">Create a new payroll period to get started.</p>
+                            <a href="{% url 'payroll:period_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Create Payroll Period
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-4 mb-4">
+            <div class="card dashboard-card">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'payroll:employee_list' %}" class="list-group-item list-group-item-action border-0 px-0">
+                            <i class="fas fa-users text-primary me-2"></i>
+                            Manage Employees
+                        </a>
+                        <a href="{% url 'payroll:period_list' %}" class="list-group-item list-group-item-action border-0 px-0">
+                            <i class="fas fa-calendar text-success me-2"></i>
+                            Payroll Periods
+                        </a>
+                        {% if current_period %}
+                        <a href="{% url 'payroll:process_payroll' current_period.pk %}" class="list-group-item list-group-item-action border-0 px-0">
+                            <i class="fas fa-cogs text-warning me-2"></i>
+                            Process Current Payroll
+                        </a>
+                        {% endif %}
+                        <a href="#" class="list-group-item list-group-item-action border-0 px-0">
+                            <i class="fas fa-chart-bar text-info me-2"></i>
+                            Payroll Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Payroll Periods -->
+    {% if recent_periods %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card dashboard-card">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-history me-2"></i>Recent Payroll Periods
+                    </h6>
+                    <a href="{% url 'payroll:period_list' %}" class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Period Name</th>
+                                    <th>Period Dates</th>
+                                    <th>Pay Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for period in recent_periods %}
+                                <tr>
+                                    <td class="font-weight-bold">{{ period.name }}</td>
+                                    <td>{{ period.start_date|date:"M d" }} - {{ period.end_date|date:"M d, Y" }}</td>
+                                    <td>{{ period.pay_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if period.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'payroll:period_detail' period.pk %}" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'payroll:process_payroll' period.pk %}" class="btn btn-outline-success btn-sm">
+                                                <i class="fas fa-cogs"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add any dashboard-specific JavaScript here
+    $(document).ready(function() {
+        // Initialize tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+        
+        // Add hover effects to cards
+        $('.dashboard-card').hover(
+            function() {
+                $(this).addClass('shadow-lg');
+            },
+            function() {
+                $(this).removeClass('shadow-lg');
+            }
+        );
+    });
+</script>
+{% endblock %}

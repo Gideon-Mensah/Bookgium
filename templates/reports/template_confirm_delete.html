@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Report Template{% endblock %}
+{% block page_title %}Delete Report Template{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirm Deletion
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Are you sure you want to delete the report template:</p>
+                <div class="alert alert-light">
+                    <strong>{{ object.name }}</strong>
+                    {% if object.description %}
+                        <br>
+                        <small class="text-muted">{{ object.description }}</small>
+                    {% endif %}
+                </div>
+                <p class="text-danger">
+                    <i class="fas fa-warning me-1"></i>
+                    This action cannot be undone.
+                </p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'reports:template_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-1"></i>Delete Template
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

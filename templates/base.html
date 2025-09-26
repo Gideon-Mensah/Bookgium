@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Bookgium - Business Management{% endblock %}</title>
+    
+    {% if user.is_authenticated %}
+    <!-- Prevent caching for authenticated pages -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    {% endif %}
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+    
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .nav-link {
+            color: rgba(255,255,255,0.8) !important;
+            transition: all 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: white !important;
+            background-color: rgba(255,255,255,0.1);
+            border-radius: 5px;
+        }
+        .main-content {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            transform: translateY(-1px);
+        }
+        .alert {
+            border-radius: 10px;
+        }
+        .nav-link.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .nav-link.disabled:hover {
+            background-color: transparent !important;
+            color: rgba(255,255,255,0.4) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            {% if user.is_authenticated %}
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4 class="text-white">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Bookgium
+                        </h4>
+                        <small class="text-white-50">Business Management</small>
+                    </div>
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
+                               href="{% url 'dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        
+                        {% if user.role == 'admin' or user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}" 
+                               href="{% url 'user_list' %}">
+                                <i class="fas fa-users me-2"></i>
+                                Users
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% if user.role != 'hr' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'clients' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'clients:dashboard' %}">
+                                <i class="fas fa-building me-2"></i>
+                                Clients
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'invoices' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'invoices:dashboard' %}">
+                                <i class="fas fa-file-invoice me-2"></i>
+                                Invoices
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'reports' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'reports:dashboard' %}">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Reports
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% if user.role == 'admin' or user.role == 'accountant' or user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'accounts' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'accounts:dashboard' %}">
+                                <i class="fas fa-calculator me-2"></i>
+                                Accounts
+                            </a>
+                        </li>
+                        
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link disabled" href="#" onclick="showComingSoon('Accounts'); return false;">
+                                <i class="fas fa-calculator me-2"></i>
+                                Accounts
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% if user.role == 'admin' or user.role == 'hr' or user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'payroll' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'payroll:dashboard' %}">
+                                <i class="fas fa-money-check-alt me-2"></i>
+                                Payroll
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link disabled" href="#" onclick="showComingSoon('Payroll'); return false;">
+                                <i class="fas fa-money-check-alt me-2"></i>
+                                Payroll
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% if user.role == 'admin' or user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'audit' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'audit:dashboard' %}">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                Audit Logs
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <li class="nav-item">
+                            <a class="nav-link disabled" href="#" onclick="showComingSoon('Settings'); return false;">
+                                <i class="fas fa-cog me-2"></i>
+                                Settings
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <hr class="text-white-50">
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'help_chat' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'help_chat:chat' %}">
+                                <i class="fas fa-robot me-2"></i>
+                                AI Help Assistant
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'profile' %}">
+                                <i class="fas fa-user me-2"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            {% endif %}
+            
+            {% if not user.is_authenticated %}
+            <!-- Login sidebar for unauthenticated users -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4 class="text-white">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Bookgium
+                        </h4>
+                        <small class="text-white-50">Business Management</small>
+                    </div>
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                Login
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            {% endif %}
+            
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                {% if user.is_authenticated %}
+                <!-- Top navbar -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">{% block page_title %}Dashboard{% endblock %}</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <!-- AI Assistant Button -->
+                        <div class="btn-group me-2">
+                            <a href="{% url 'ai_assistant:chat' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-robot me-1"></i>
+                                AI Assistant
+                            </a>
+                        </div>
+                        
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>
+                                {{ user.get_full_name|default:user.username }}
+                                <span class="badge bg-primary ms-1">{{ user.get_role_display }}</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-user me-2"></i>Profile</a></li>
+                                <li><a class="dropdown-item" href="{% url 'password_change' %}"><i class="fas fa-key me-2"></i>Change Password</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Messages -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <!-- Page content -->
+                <div class="{% if not user.is_authenticated %}container mt-5{% endif %}">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Prevent back button after logout by clearing browser cache for authenticated pages
+        {% if user.is_authenticated %}
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                // Page was loaded from cache (back button), reload to check authentication
+                window.location.reload();
+            }
+        });
+        
+        // Clear history when user logs out
+        window.addEventListener('beforeunload', function() {
+            if (window.performance && window.performance.navigation.type === window.performance.navigation.TYPE_NAVIGATE) {
+                // Clear any cached data
+                if ('caches' in window) {
+                    caches.keys().then(function(names) {
+                        names.forEach(function(name) {
+                            caches.delete(name);
+                        });
+                    });
+                }
+            }
+        });
+        {% endif %}
+        
+        // Show coming soon notification for disabled features
+        function showComingSoon(feature) {
+            // Create and show a toast notification
+            const toastHtml = `
+                <div class="toast align-items-center text-white bg-info border-0 position-fixed top-0 end-0 m-3" style="z-index: 9999;" role="alert" aria-live="assertive" aria-atomic="true" id="comingSoonToast">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-info-circle me-2"></i>
+                            ${feature} feature is coming soon!
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing toast if any
+            const existingToast = document.getElementById('comingSoonToast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            // Add new toast to body
+            document.body.insertAdjacentHTML('beforeend', toastHtml);
+            
+            // Show the toast
+            const toast = new bootstrap.Toast(document.getElementById('comingSoonToast'));
+            toast.show();
+            
+            // Auto remove after showing
+            setTimeout(() => {
+                try {
+                    document.getElementById('comingSoonToast').remove();
+                } catch (e) {
+                    // Toast already removed
+                }
+            }, 4000);
+        }
+
+        // Add authentication check for all navigation links
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is authenticated (this will be set by Django)
+            const isAuthenticated = {{ user.is_authenticated|yesno:"true,false" }};
+            
+            if (!isAuthenticated) {
+                // If user is not authenticated, disable all navigation links except login and logout
+                const navLinks = document.querySelectorAll('.sidebar .nav-link:not([href*="login"]):not([href*="logout"])');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        // Redirect to login page
+                        window.location.href = '{% url "login" %}';
+                        return false;
+                    });
+                });
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+    
+    {% if user.is_authenticated %}
+    <!-- Floating AI Assistant Button -->
+    <div class="floating-chat-btn" id="floatingAIBtn" title="AI Assistant">
+        <i class="fas fa-robot"></i>
+    </div>
+    
+    <style>
+        .floating-chat-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .floating-chat-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+        }
+        
+        .floating-chat-btn:active {
+            transform: translateY(0) scale(0.95);
+        }
+        
+        /* Hide on chat pages to avoid redundancy */
+        .floating-chat-btn.hide-on-chat {
+            display: none;
+        }
+        
+        /* Pulse animation for attention */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .floating-chat-btn.pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const floatingAIBtn = document.getElementById('floatingAIBtn');
+            
+            if (floatingAIBtn) {
+                // Hide button on AI assistant pages
+                if (window.location.pathname.includes('/ai-assistant/')) {
+                    floatingAIBtn.classList.add('hide-on-chat');
+                }
+                
+                // Add click handler
+                floatingAIBtn.addEventListener('click', function() {
+                    window.location.href = '{% url "ai_assistant:chat" %}';
+                });
+                
+                // Add pulse animation on first visit (could be enhanced with local storage)
+                setTimeout(() => {
+                    floatingChatBtn.classList.add('pulse');
+                }, 2000);
+                
+                // Remove pulse after user interacts
+                floatingChatBtn.addEventListener('click', function() {
+                    floatingChatBtn.classList.remove('pulse');
+                });
+            }
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

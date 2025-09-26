@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Revenue Accounts Overview - Bookgium{% endblock %}
+{% block page_title %}Revenue Accounts Overview{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Revenue Accounts Analysis:</strong> This page helps identify revenue accounts with unusual balances.
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-chart-line me-2"></i>Revenue Accounts Overview</h2>
+            <p class="text-muted mb-0">Total Revenue Accounts: {{ total_accounts }}</p>
+        </div>
+        <div>
+            <a href="{% url 'accounts:chart_of_accounts' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Chart of Accounts
+            </a>
+        </div>
+    </div>
+
+    {% if accounts_with_negative_activity %}
+    <div class="alert alert-warning mb-4">
+        <h5><i class="fas fa-exclamation-triangle me-2"></i>Accounts with Negative Activity Detected</h5>
+        <p class="mb-2">The following {{ accounts_with_negative_activity|length }} revenue account(s) have negative period activity, which may indicate data entry issues:</p>
+        <ul class="mb-0">
+            {% for acc_info in accounts_with_negative_activity %}
+            <li>
+                <strong>{{ acc_info.account.code }} - {{ acc_info.account.name }}</strong>: 
+                {{ currency_symbol }}{{ acc_info.journal_balance|floatformat:2 }}
+                <a href="{% url 'accounts:debug_account' acc_info.account.id %}" class="btn btn-sm btn-outline-warning ms-2">Debug</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-table me-2"></i>All Revenue Accounts</h5>
+        </div>
+        <div class="card-body">
+            {% if accounts_with_balances %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Account Code</th>
+                                <th>Account Name</th>
+                                <th class="text-end">Opening Balance</th>
+                                <th class="text-end">Period Activity</th>
+                                <th class="text-end">Current Balance</th>
+                                <th class="text-center">Transactions</th>
+                                <th class="text-center">Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for acc_info in accounts_with_balances %}
+                            <tr class="{% if acc_info.has_negative_activity %}table-warning{% endif %}">
+                                <td><strong>{{ acc_info.account.code }}</strong></td>
+                                <td>
+                                    {{ acc_info.account.name }}
+                                    {% if acc_info.has_negative_activity %}
+                                        <i class="fas fa-exclamation-triangle text-warning ms-1" title="Negative activity detected"></i>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <span class="{% if acc_info.opening_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ currency_symbol }}{{ acc_info.opening_balance|floatformat:2 }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="{% if acc_info.journal_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ currency_symbol }}{{ acc_info.journal_balance|floatformat:2 }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <strong class="{% if acc_info.total_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ currency_symbol }}{{ acc_info.total_balance|floatformat:2 }}
+                                    </strong>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-info">{{ acc_info.transaction_count }}</span>
+                                </td>
+                                <td class="text-center">
+                                    {% if acc_info.has_negative_activity %}
+                                        <span class="badge bg-warning">Needs Review</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Normal</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'accounts:account_detail' acc_info.account.pk %}" 
+                                           class="btn btn-outline-info" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'accounts:account_statement' acc_info.account.id %}" 
+                                           class="btn btn-outline-primary" title="View Statement">
+                                            <i class="fas fa-file-alt"></i>
+                                        </a>
+                                        {% if acc_info.has_negative_activity %}
+                                        <a href="{% url 'accounts:debug_account' acc_info.account.id %}" 
+                                           class="btn btn-outline-warning" title="Debug">
+                                            <i class="fas fa-bug"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No revenue accounts found.</p>
+                    <a href="{% url 'accounts:account_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Create Revenue Account
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.table-warning {
+    background-color: #fff3cd !important;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Report Templates - Reports{% endblock %}
+{% block page_title %}Report Templates{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3>Report Templates</h3>
+                <p class="text-muted mb-0">Manage your report templates</p>
+            </div>
+            <div class="btn-group">
+                <a href="{% url 'reports:template_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>New Template
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if templates %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Created By</th>
+                            <th>Created</th>
+                            <th>Public</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for template in templates %}
+                        <tr>
+                            <td>
+                                <strong>{{ template.name }}</strong>
+                                {% if template.description %}
+                                    <br>
+                                    <small class="text-muted">{{ template.description|truncatechars:50 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ template.get_report_type_display }}</span>
+                            </td>
+                            <td>{{ template.created_by.get_full_name|default:template.created_by.username }}</td>
+                            <td>{{ template.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                {% if template.is_public %}
+                                    <i class="fas fa-globe text-success" title="Public"></i>
+                                {% else %}
+                                    <i class="fas fa-lock text-muted" title="Private"></i>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    {% if template.created_by == request.user %}
+                                    <a href="{% url 'reports:template_edit' template.pk %}" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'reports:template_delete' template.pk %}" class="btn btn-outline-danger btn-sm">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Template pagination">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No Report Templates</h5>
+                <p class="text-muted">Create your first report template to get started.</p>
+                <a href="{% url 'reports:template_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Create Template
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block title %}Debug Account - {{ account.name }} - Bookgium{% endblock %}
+{% block page_title %}Debug Account Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Debug Mode:</strong> This page is only available to staff users for troubleshooting account balance issues.
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-bug me-2"></i>Debugging: {{ account.name }}</h2>
+            <p class="text-muted mb-0">Account Code: {{ account.code }} | Type: {{ account.get_account_type_display }}</p>
+        </div>
+        <div>
+            <a href="{% url 'accounts:account_detail' account.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Account Detail
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h4>{{ total_entries }}</h4>
+                    <p class="mb-0">Total Entries</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h4>{{ currency_symbol }}{{ total_debits|floatformat:2 }}</h4>
+                    <p class="mb-0">Total Debits</p>
+                    <small>({{ debit_entries.count }} entries)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h4>{{ currency_symbol }}{{ total_credits|floatformat:2 }}</h4>
+                    <p class="mb-0">Total Credits</p>
+                    <small>({{ credit_entries.count }} entries)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-{% if net_activity >= 0 %}primary{% else %}warning text-dark{% endif %}">
+                <div class="card-body text-center">
+                    <h4>{{ currency_symbol }}{{ net_activity|floatformat:2 }}</h4>
+                    <p class="mb-0">Net Activity</p>
+                    <small>(Credits - Debits)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-search me-2"></i>Analysis</h5>
+                </div>
+                <div class="card-body">
+                    {% if account.account_type == 'income' %}
+                        {% if net_activity < 0 %}
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Issue Detected:</strong> This revenue account has more debits ({{ currency_symbol }}{{ total_debits|floatformat:2 }}) 
+                                than credits ({{ currency_symbol }}{{ total_credits|floatformat:2 }}). 
+                                Revenue accounts should typically have more credits than debits.
+                            </div>
+                        {% else %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check me-2"></i>
+                                <strong>Normal:</strong> This revenue account has more credits than debits, which is expected.
+                            </div>
+                        {% endif %}
+                    {% elif account.account_type == 'expense' %}
+                        {% if net_activity > 0 %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Unusual:</strong> This expense account has more credits than debits. 
+                                Expense accounts typically have more debits than credits.
+                            </div>
+                        {% else %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check me-2"></i>
+                                <strong>Normal:</strong> This expense account has more debits than credits, which is expected.
+                            </div>
+                        {% endif %}
+                    {% endif %}
+
+                    <h6 class="mt-3">Balance Breakdown:</h6>
+                    <ul>
+                        <li><strong>Opening Balance:</strong> {{ currency_symbol }}{{ account.opening_balance|floatformat:2 }}</li>
+                        <li><strong>Journal Activity:</strong> {{ currency_symbol }}{{ account.journal_balance|floatformat:2 }}</li>
+                        <li><strong>Total Balance:</strong> {{ currency_symbol }}{{ account.balance|floatformat:2 }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Entries -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-list me-2"></i>All Journal Entry Lines</h5>
+        </div>
+        <div class="card-body">
+            {% if all_entries %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Journal Entry</th>
+                                <th>Description</th>
+                                <th>Entry Type</th>
+                                <th class="text-end">Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for line in all_entries %}
+                            <tr class="{% if line.entry_type == 'debit' and account.account_type == 'income' %}table-warning{% endif %}">
+                                <td>{{ line.journal_entry.date|date:"M d, Y" }}</td>
+                                <td>
+                                    <strong>JE-{{ line.journal_entry.id }}</strong>
+                                    {% if line.journal_entry.reference %}
+                                    <br><small class="text-muted">Ref: {{ line.journal_entry.reference }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ line.description|default:line.journal_entry.description|truncatechars:60 }}
+                                </td>
+                                <td>
+                                    {% if line.entry_type == 'debit' %}
+                                        <span class="badge bg-danger">
+                                            Debit
+                                            {% if account.account_type == 'income' %}
+                                                <i class="fas fa-exclamation-triangle ms-1" title="Unusual for revenue"></i>
+                                            {% endif %}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success">
+                                            Credit
+                                            {% if account.account_type == 'income' %}
+                                                <i class="fas fa-check ms-1" title="Normal for revenue"></i>
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <strong class="{% if line.entry_type == 'debit' %}text-danger{% else %}text-success{% endif %}">
+                                        {{ currency_symbol }}{{ line.amount|floatformat:2 }}
+                                    </strong>
+                                </td>
+                                <td>
+                                    {% if line.journal_entry.is_posted %}
+                                        <span class="badge bg-success">Posted</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Draft</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'accounts:journal_entry_detail' line.journal_entry.pk %}" 
+                                       class="btn btn-sm btn-outline-info" title="View Journal Entry">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No journal entries found for this account.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.table-warning {
+    background-color: #fff3cd !important;
+}
+</style>
+{% endblock %}

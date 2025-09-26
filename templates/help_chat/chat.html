@@ -1,0 +1,499 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Help Chat - Bookgium{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        height: 70vh;
+        max-height: 70vh;
+    }
+    
+    .chat-sidebar {
+        background-color: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+        height: 70vh;
+        overflow-y: auto;
+    }
+    
+    .chat-messages {
+        height: 60vh;
+        overflow-y: auto;
+        padding: 1rem;
+        background-color: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+    }
+    
+    .message {
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        max-width: 80%;
+    }
+    
+    .message.user {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        margin-left: auto;
+        text-align: right;
+    }
+    
+    .message.assistant {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        margin-right: auto;
+    }
+    
+    .message.system {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        text-align: center;
+        margin: 0 auto;
+        font-style: italic;
+    }
+    
+    .message-timestamp {
+        font-size: 0.75rem;
+        opacity: 0.7;
+        margin-top: 0.25rem;
+    }
+    
+    .chat-input {
+        position: sticky;
+        bottom: 0;
+        background-color: white;
+        padding: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .session-item {
+        padding: 0.75rem;
+        border-bottom: 1px solid #dee2e6;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .session-item:hover {
+        background-color: #e9ecef;
+    }
+    
+    .session-item.active {
+        background-color: #e7f3ff;
+        border-left: 3px solid #0066cc;
+    }
+    
+    .typing-indicator {
+        display: none;
+        padding: 0.5rem;
+        font-style: italic;
+        color: #6c757d;
+    }
+    
+    .help-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    
+    .quick-actions {
+        margin-bottom: 1rem;
+    }
+    
+    .quick-action-btn {
+        margin: 0.25rem;
+        font-size: 0.875rem;
+    }
+    
+    .chat-welcome {
+        text-align: center;
+        padding: 2rem;
+        color: #6c757d;
+    }
+    
+    .ai-avatar {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-right: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        background-color: #28a745;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-left: 0.5rem;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0"><i class="fas fa-robot me-2"></i>AI Help Assistant</h1>
+                    <p class="text-muted mb-0">Get instant help with Bookgium features and functionality</p>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-primary" id="newChatBtn">
+                        <i class="fas fa-plus me-2"></i>New Chat
+                    </button>
+                    <a href="{% url 'help_chat:knowledge_base' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-book me-2"></i>Knowledge Base
+                    </a>
+                    <a href="{% url 'help_chat:faq' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-question-circle me-2"></i>FAQ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row chat-container">
+        <!-- Chat Sessions Sidebar -->
+        <div class="col-md-3 chat-sidebar">
+            <div class="p-3">
+                <h6 class="mb-3">Recent Chats</h6>
+                <div id="chatSessions">
+                    {% for session in sessions %}
+                    <div class="session-item {% if current_session and session.session_id == current_session.session_id %}active{% endif %}" 
+                         data-session-id="{{ session.session_id }}">
+                        <div class="fw-semibold">{{ session.title|truncatechars:30 }}</div>
+                        <small class="text-muted">{{ session.updated_at|timesince }} ago</small>
+                        <small class="text-muted d-block">{{ session.get_messages_count }} messages</small>
+                    </div>
+                    {% empty %}
+                    <div class="text-muted text-center py-3">
+                        <i class="fas fa-comments fa-2x mb-2"></i>
+                        <p>No chats yet. Start a conversation!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chat Messages Area -->
+        <div class="col-md-9">
+            <div class="chat-messages" id="chatMessages">
+                {% if current_session and messages %}
+                    {% for message in messages %}
+                    <div class="message {{ message.type }}" data-message-id="{{ forloop.counter }}">
+                        {% if message.type == 'user' %}
+                            <div class="d-flex align-items-start justify-content-end">
+                                <div>
+                                    <div>{{ message.content|linebreaks }}</div>
+                                    <div class="message-timestamp">{{ message.timestamp|timesince }} ago</div>
+                                </div>
+                                <div class="user-avatar">{{ user.first_name|first|default:"U" }}</div>
+                            </div>
+                        {% elif message.type == 'assistant' %}
+                            <div class="d-flex align-items-start">
+                                <div class="ai-avatar">AI</div>
+                                <div class="flex-grow-1">
+                                    <div>{{ message.content|linebreaks }}</div>
+                                    <div class="message-timestamp">{{ message.timestamp|timesince }} ago</div>
+                                    <div class="help-actions">
+                                        <button type="button" class="btn btn-sm btn-outline-success rate-btn" data-helpful="true">
+                                            <i class="fas fa-thumbs-up"></i> Helpful
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger rate-btn" data-helpful="false">
+                                            <i class="fas fa-thumbs-down"></i> Not Helpful
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="chat-welcome">
+                    <div class="ai-avatar mx-auto mb-3" style="width: 64px; height: 64px; font-size: 1.5rem;">AI</div>
+                    <h4>Welcome to Bookgium AI Assistant!</h4>
+                    <p class="mb-4">I'm here to help you navigate and understand our accounting application. Ask me anything about:</p>
+                    
+                    <div class="quick-actions">
+                        <button type="button" class="btn btn-outline-primary quick-action-btn" data-message="How do I create a new account?">
+                            Creating Accounts
+                        </button>
+                        <button type="button" class="btn btn-outline-primary quick-action-btn" data-message="How do I record a transaction?">
+                            Recording Transactions
+                        </button>
+                        <button type="button" class="btn btn-outline-primary quick-action-btn" data-message="How do I create a journal entry?">
+                            Journal Entries
+                        </button>
+                        <button type="button" class="btn btn-outline-primary quick-action-btn" data-message="What reports are available?">
+                            Reports
+                        </button>
+                        <button type="button" class="btn btn-outline-primary quick-action-btn" data-message="How do I manage clients?">
+                            Client Management
+                        </button>
+                        <button type="button" class="btn btn-outline-primary quick-action-btn" data-message="How do I change settings?">
+                            Settings
+                        </button>
+                    </div>
+                    
+                    <p class="text-muted">Type your question below or click on any topic above to get started!</p>
+                </div>
+                {% endif %}
+                
+                <div class="typing-indicator" id="typingIndicator">
+                    <div class="ai-avatar">AI</div>
+                    <span>AI is typing...</span>
+                </div>
+            </div>
+            
+            <!-- Chat Input -->
+            <div class="chat-input">
+                <form id="chatForm">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="messageInput" 
+                               placeholder="Ask me anything about Bookgium..." autocomplete="off">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+    const chatMessages = document.getElementById('chatMessages');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const newChatBtn = document.getElementById('newChatBtn');
+    const chatSessions = document.getElementById('chatSessions');
+    
+    let currentSessionId = '{% if current_session %}{{ current_session.session_id }}{% endif %}';
+    
+    // Auto-focus on message input
+    messageInput.focus();
+    
+    // Handle form submission
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const message = messageInput.value.trim();
+        if (message) {
+            sendMessage(message);
+            messageInput.value = '';
+        }
+    });
+    
+    // Handle quick action buttons
+    document.querySelectorAll('.quick-action-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const message = this.dataset.message;
+            sendMessage(message);
+        });
+    });
+    
+    // Handle new chat button
+    newChatBtn.addEventListener('click', function() {
+        fetch('{% url "help_chat:new_chat" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            }
+        })
+        .catch(error => {
+            console.error('Error creating new chat:', error);
+        });
+    });
+    
+    // Handle session clicks
+    chatSessions.addEventListener('click', function(e) {
+        const sessionItem = e.target.closest('.session-item');
+        if (sessionItem) {
+            const sessionId = sessionItem.dataset.sessionId;
+            window.location.href = `{% url "help_chat:chat" %}?session=${sessionId}`;
+        }
+    });
+    
+    // Handle rating buttons
+    chatMessages.addEventListener('click', function(e) {
+        if (e.target.closest('.rate-btn')) {
+            const btn = e.target.closest('.rate-btn');
+            const isHelpful = btn.dataset.helpful === 'true';
+            const messageDiv = btn.closest('.message');
+            const messageId = messageDiv.dataset.messageId;
+            
+            // Rate the message
+            fetch('{% url "help_chat:rate_message" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message_id: messageId,
+                    is_helpful: isHelpful
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update button states
+                    const allBtns = messageDiv.querySelectorAll('.rate-btn');
+                    allBtns.forEach(b => b.classList.remove('btn-success', 'btn-danger'));
+                    
+                    if (isHelpful) {
+                        btn.classList.add('btn-success');
+                    } else {
+                        btn.classList.add('btn-danger');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error rating message:', error);
+            });
+        }
+    });
+    
+    function sendMessage(message) {
+        // Add user message to chat
+        addMessage('user', message);
+        
+        // Show typing indicator
+        typingIndicator.style.display = 'block';
+        scrollToBottom();
+        
+        // Send message to server
+        fetch('{% url "help_chat:send_message" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: message,
+                session_id: currentSessionId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Hide typing indicator
+            typingIndicator.style.display = 'none';
+            
+            if (data.success) {
+                // Add assistant response
+                addMessage('assistant', data.response);
+                
+                // Update current session
+                currentSessionId = data.session_id;
+                
+                // Update page URL if needed
+                if (!window.location.search.includes('session=')) {
+                    const newUrl = `{% url "help_chat:chat" %}?session=${data.session_id}`;
+                    window.history.pushState({}, '', newUrl);
+                }
+            } else {
+                addMessage('system', 'Sorry, there was an error processing your message. Please try again.');
+            }
+        })
+        .catch(error => {
+            typingIndicator.style.display = 'none';
+            addMessage('system', 'Sorry, there was a connection error. Please try again.');
+            console.error('Error sending message:', error);
+        });
+    }
+    
+    function addMessage(type, content) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        
+        const timestamp = new Date().toLocaleTimeString();
+        
+        if (type === 'user') {
+            messageDiv.innerHTML = `
+                <div class="d-flex align-items-start justify-content-end">
+                    <div>
+                        <div>${content.replace(/\n/g, '<br>')}</div>
+                        <div class="message-timestamp">just now</div>
+                    </div>
+                    <div class="user-avatar">{{ user.first_name|first|default:"U" }}</div>
+                </div>
+            `;
+        } else if (type === 'assistant') {
+            messageDiv.innerHTML = `
+                <div class="d-flex align-items-start">
+                    <div class="ai-avatar">AI</div>
+                    <div class="flex-grow-1">
+                        <div>${content.replace(/\n/g, '<br>')}</div>
+                        <div class="message-timestamp">just now</div>
+                        <div class="help-actions">
+                            <button type="button" class="btn btn-sm btn-outline-success rate-btn" data-helpful="true">
+                                <i class="fas fa-thumbs-up"></i> Helpful
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger rate-btn" data-helpful="false">
+                                <i class="fas fa-thumbs-down"></i> Not Helpful
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            messageDiv.innerHTML = `<div>${content}</div>`;
+        }
+        
+        // Remove welcome message if it exists
+        const welcomeMsg = chatMessages.querySelector('.chat-welcome');
+        if (welcomeMsg) {
+            welcomeMsg.remove();
+        }
+        
+        chatMessages.insertBefore(messageDiv, typingIndicator);
+        scrollToBottom();
+    }
+    
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Auto-scroll to bottom on page load
+    scrollToBottom();
+});
+</script>
+{% endblock %}

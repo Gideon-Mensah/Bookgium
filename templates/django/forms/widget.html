@@ -1,0 +1,15 @@
+{% if field.widget.input_type == 'select' %}
+<select name="{{ field.name }}" class="form-select{% if field.errors %} is-invalid{% endif %}"{% if field.field.required %} required{% endif %}{% if field.auto_id %} id="{{ field.auto_id }}"{% endif %}{% include "django/forms/widgets/attrs.html" %}>
+  {% for value, label in field.field.choices %}
+    <option value="{{ value }}"{% if value == field.value %} selected{% endif %}>{{ label }}</option>
+  {% endfor %}
+</select>
+{% elif field.widget.input_type == 'textarea' %}
+<textarea name="{{ field.name }}" class="form-control{% if field.errors %} is-invalid{% endif %}"{% if field.field.required %} required{% endif %}{% if field.auto_id %} id="{{ field.auto_id }}"{% endif %}{% include "django/forms/widgets/attrs.html" %}>{{ field.value|default_if_none:"" }}</textarea>
+{% elif field.widget.input_type == 'checkbox' %}
+<div class="form-check">
+  <input type="checkbox" name="{{ field.name }}" class="form-check-input{% if field.errors %} is-invalid{% endif %}"{% if field.value %} checked{% endif %}{% if field.auto_id %} id="{{ field.auto_id }}"{% endif %}{% include "django/forms/widgets/attrs.html" %}>
+</div>
+{% else %}
+<input type="{{ field.widget.input_type|default:'text' }}" name="{{ field.name }}" class="form-control{% if field.errors %} is-invalid{% endif %}" value="{{ field.value|default_if_none:"" }}"{% if field.field.required %} required{% endif %}{% if field.auto_id %} id="{{ field.auto_id }}"{% endif %}{% include "django/forms/widgets/attrs.html" %}>
+{% endif %}

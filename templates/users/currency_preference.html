@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Currency Preference - Bookgium{% endblock %}
+{% block page_title %}Currency Preference{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-coins me-2"></i>
+                    Currency Settings
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">
+                    Choose your preferred currency for accounting forms and displays. 
+                    This setting only affects your personal view and forms.
+                </p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.preferred_currency.id_for_label }}" class="form-label">
+                                    {{ form.preferred_currency.label }}
+                                </label>
+                                {{ form.preferred_currency }}
+                                {% if form.preferred_currency.help_text %}
+                                    <div class="form-text">{{ form.preferred_currency.help_text }}</div>
+                                {% endif %}
+                                {% if form.preferred_currency.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.preferred_currency.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Current Selection</h6>
+                                    <div id="currency-preview">
+                                        <span class="badge bg-primary" id="currency-code">{{ user.preferred_currency }}</span>
+                                        <span id="currency-symbol" class="ms-2 fs-4"></span>
+                                        <div class="mt-2">
+                                            <small class="text-muted">Example: </small>
+                                            <span id="currency-example" class="fw-bold"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'profile' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Back to Profile
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>
+                            Save Currency Preference
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Information Card -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    How Currency Settings Work
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Your currency preference affects how amounts are displayed in forms</li>
+                    <li>The currency symbol will appear in journal entries and reports</li>
+                    <li>This is a personal setting and doesn't affect other users</li>
+                    <li>All calculations and storage remain in the base currency internally</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const currencySelect = document.getElementById('{{ form.preferred_currency.id_for_label }}');
+    const currencyCode = document.getElementById('currency-code');
+    const currencySymbol = document.getElementById('currency-symbol');
+    const currencyExample = document.getElementById('currency-example');
+    
+    const currencySymbols = {
+        'USD': '$',
+        'EUR': '€',
+        'GBP': '£',
+        'CAD': 'C$',
+        'AUD': 'A$',
+        'JPY': '¥',
+        'CHF': 'CHF',
+        'CNY': '¥',
+        'INR': '₹',
+        'BRL': 'R$',
+        'ZAR': 'R',
+        'MXN': '$',
+        'SGD': 'S$',
+        'HKD': 'HK$',
+        'NZD': 'NZ$'
+    };
+    
+    function updateCurrencyPreview() {
+        const selectedCurrency = currencySelect.value;
+        const symbol = currencySymbols[selectedCurrency] || '$';
+        
+        currencyCode.textContent = selectedCurrency;
+        currencySymbol.textContent = symbol;
+        currencyExample.textContent = symbol + '1,234.56';
+    }
+    
+    // Initial update
+    updateCurrencyPreview();
+    
+    // Update on change
+    currencySelect.addEventListener('change', updateCurrencyPreview);
+});
+</script>
+{% endblock %}

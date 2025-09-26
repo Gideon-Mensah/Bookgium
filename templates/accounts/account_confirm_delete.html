@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Delete Account - Bookgium{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Confirm Delete Account</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning me-2"></i>
+                        <strong>Warning!</strong> This action cannot be undone. Deleting this account will permanently remove it and all associated transactions from your records.
+                    </div>
+
+                    <!-- Account Details -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Account Details:</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Name:</strong> {{ object.name }}</li>
+                                <li><strong>Code:</strong> {{ object.code }}</li>
+                                <li><strong>Type:</strong> 
+                                    <span class="badge bg-primary">{{ object.get_account_type_display }}</span>
+                                </li>
+                                <li><strong>Status:</strong> 
+                                    {% if object.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                </li>
+                                <li><strong>Balance:</strong> 
+                                    <span class="{% if object.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        ${{ object.balance|floatformat:2 }}
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            {% if object.description %}
+                            <h6>Description:</h6>
+                            <p class="text-muted">{{ object.description }}</p>
+                            {% endif %}
+                            
+                            <h6>Created:</h6>
+                            <p class="text-muted">
+                                {{ object.created_at|date:"F d, Y H:i" }}<br>
+                                by {{ object.created_by.get_full_name|default:object.created_by.username }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Transaction Impact -->
+                    {% if transaction_count > 0 %}
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-circle me-2"></i>Transaction Impact:</h6>
+                        <p class="mb-0">
+                            This account has <strong>{{ transaction_count }} transaction{{ transaction_count|pluralize }}</strong> that will also be permanently deleted.
+                        </p>
+                        
+                        <!-- Show recent transactions -->
+                        {% if recent_transactions %}
+                        <hr>
+                        <h6 class="mt-3">Recent Transactions (last 5):</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Description</th>
+                                        <th>Type</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for transaction in recent_transactions %}
+                                    <tr>
+                                        <td>{{ transaction.date|date:"M d, Y" }}</td>
+                                        <td>{{ transaction.description|truncatechars:30 }}</td>
+                                        <td>
+                                            {% if transaction.transaction_type == 'debit' %}
+                                                <span class="badge bg-danger">Debit</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Credit</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="{% if transaction.transaction_type == 'debit' %}text-danger{% else %}text-success{% endif %}">
+                                                {% if transaction.transaction_type == 'debit' %}-{% else %}+{% endif %}${{ transaction.amount|floatformat:2 }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if transaction_count > 5 %}
+                        <small class="text-muted">... and {{ transaction_count|add:"-5" }} more transaction{{ transaction_count|add:"-5"|pluralize }}</small>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        This account has no transactions. Only the account record will be deleted.
+                    </div>
+                    {% endif %}
+
+                    <!-- Confirmation Form -->
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        
+                        {% if transaction_count > 0 %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                            <label class="form-check-label text-danger" for="confirmDelete">
+                                I understand that this will permanently delete the account and all {{ transaction_count }} associated transaction{{ transaction_count|pluralize }}.
+                            </label>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <a href="{% url 'accounts:account_detail' object.pk %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>Cancel
+                                </a>
+                                <a href="{% url 'accounts:account_list' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-list me-1"></i>Back to List
+                                </a>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-danger" {% if transaction_count > 0 %}id="deleteBtn" disabled{% endif %}>
+                                <i class="fas fa-trash me-1"></i>Yes, Delete Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Alternative Actions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-lightbulb me-2"></i>Alternative Actions</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Instead of deleting, you might consider:
+                    </p>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="d-grid">
+                                <a href="{% url 'accounts:account_update' object.pk %}" class="btn btn-outline-warning">
+                                    <i class="fas fa-edit me-1"></i>Edit Account
+                                </a>
+                            </div>
+                            <small class="text-muted d-block text-center mt-2">Modify account details</small>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-grid">
+                                {% if object.is_active %}
+                                <form method="post" action="{% url 'accounts:account_update' object.pk %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="is_active" value="false">
+                                    <button type="submit" class="btn btn-outline-secondary w-100">
+                                        <i class="fas fa-ban me-1"></i>Deactivate
+                                    </button>
+                                </form>
+                                {% else %}
+                                <form method="post" action="{% url 'accounts:account_update' object.pk %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="is_active" value="true">
+                                    <button type="submit" class="btn btn-outline-success w-100">
+                                        <i class="fas fa-check me-1"></i>Activate
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted d-block text-center mt-2">Change account status</small>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-grid">
+                                <a href="{% url 'accounts:transaction_list' %}?account={{ object.pk }}" class="btn btn-outline-info">
+                                    <i class="fas fa-list me-1"></i>View Transactions
+                                </a>
+                            </div>
+                            <small class="text-muted d-block text-center mt-2">Review transaction history</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if transaction_count > 0 %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('confirmDelete');
+    const deleteBtn = document.getElementById('deleteBtn');
+    
+    if (checkbox && deleteBtn) {
+        checkbox.addEventListener('change', function() {
+            deleteBtn.disabled = !this.checked;
+        });
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

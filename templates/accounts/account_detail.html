@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ account.name }} - Bookgium{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-file-invoice-dollar me-2"></i>{{ account.name }}</h2>
+                <div>
+                    <a href="{% url 'accounts:account_update' account.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-1"></i>Edit
+                    </a>
+                    <a href="{% url 'accounts:account_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to List
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="fas fa-info-circle me-2"></i>Account Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Account Code:</strong> {{ account.code }}</p>
+                                    <p><strong>Account Type:</strong> 
+                                        <span class="badge bg-primary">{{ account.get_account_type_display }}</span>
+                                    </p>
+                                    <p><strong>Status:</strong> 
+                                        {% if account.is_active %}
+                                            <span class="badge bg-success"><i class="fas fa-check me-1"></i>Active</span>
+                                        {% else %}
+                                            <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Inactive</span>
+                                        {% endif %}
+                                    </p>
+                                    {% if account.parent %}
+                                    <p><strong>Parent Account:</strong> {{ account.parent.code }} - {{ account.parent.name }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Opening Balance:</strong> 
+                                        <span class="{% if account.opening_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ currency_symbol }}{{ account.opening_balance|floatformat:2 }}
+                                        </span>
+                                    </p>
+                                    {% if account.opening_balance_date %}
+                                    <p><strong>Opening Balance Date:</strong> {{ account.opening_balance_date|date:"M d, Y" }}</p>
+                                    {% endif %}
+                                    <p><strong>Created:</strong> {{ account.created_at|date:"M d, Y H:i" }}</p>
+                                    <p><strong>Created By:</strong> 
+                                        {% if account.created_by %}
+                                            {{ account.created_by.get_full_name|default:account.created_by.username }}
+                                        {% else %}
+                                            <span class="text-muted">System</span>
+                                        {% endif %}
+                                    </p>
+                                    <p><strong>Last Updated:</strong> {{ account.updated_at|date:"M d, Y H:i" }}</p>
+                                </div>
+                            </div>
+                            {% if account.description %}
+                                <div class="mt-3">
+                                    <p><strong>Description:</strong></p>
+                                    <p class="text-muted">{{ account.description }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="fas fa-calculator me-2"></i>Account Balance</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <h3 class="{% if account.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ currency_symbol }}{{ account.balance|floatformat:2 }}
+                                </h3>
+                                <small class="text-muted">
+                                    {% if account.account_type == 'income' %}
+                                        Total Revenue Balance
+                                    {% elif account.account_type == 'expense' %}
+                                        Total Expense Balance
+                                    {% elif account.account_type == 'asset' %}
+                                        Asset Balance
+                                    {% elif account.account_type == 'liability' %}
+                                        Liability Balance
+                                    {% elif account.account_type == 'equity' %}
+                                        Equity Balance
+                                    {% else %}
+                                        Current Balance
+                                    {% endif %}
+                                </small>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="border-end">
+                                        <h6 class="text-primary">{{ currency_symbol }}{{ account.opening_balance|floatformat:2 }}</h6>
+                                        <small class="text-muted">Opening Balance</small>
+                                        {% if account.opening_balance_date %}
+                                        <br><small class="text-muted">{{ account.opening_balance_date|date:"M d, Y" }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <h6 class="{% if account.journal_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ currency_symbol }}{{ account.journal_balance|floatformat:2 }}
+                                    </h6>
+                                    <small class="text-muted">
+                                        {% if account.account_type == 'income' %}
+                                            Period Revenue
+                                        {% elif account.account_type == 'expense' %}
+                                            Period Expenses
+                                        {% elif account.account_type == 'asset' %}
+                                            Period Activity
+                                        {% elif account.account_type == 'liability' %}
+                                            Period Activity
+                                        {% else %}
+                                            Period Activity
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            {% if transaction_count > 0 %}
+                            <div class="mt-3 pt-3 border-top">
+                                <div class="row text-center small">
+                                    <div class="col-4">
+                                        <strong class="text-danger">{{ currency_symbol }}{{ total_debits|floatformat:2 }}</strong>
+                                        <br><span class="text-muted">Total Debits</span>
+                                    </div>
+                                    <div class="col-4">
+                                        <strong class="text-success">{{ currency_symbol }}{{ total_credits|floatformat:2 }}</strong>
+                                        <br><span class="text-muted">Total Credits</span>
+                                    </div>
+                                    <div class="col-4">
+                                        <strong class="text-info">{{ transaction_count }}</strong>
+                                        <br><span class="text-muted">Transactions</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if account.account_type == 'income' and account.journal_balance < 0 %}
+                            <div class="mt-3 pt-3 border-top">
+                                <div class="alert alert-info small mb-0">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    <strong>Note:</strong> Negative revenue activity indicates more debits than credits. 
+                                    Revenue accounts typically have credit balances (positive values).
+                                </div>
+                            </div>
+                            {% elif account.account_type == 'expense' and account.journal_balance < 0 %}
+                            <div class="mt-3 pt-3 border-top">
+                                <div class="alert alert-info small mb-0">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    <strong>Note:</strong> Negative expense activity indicates more credits than debits. 
+                                    Expense accounts typically have debit balances (positive values).
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-chart-bar me-2"></i>Quick Actions</h6>
+                        </div>
+                        <div class="card-body">
+                            <a href="{% url 'accounts:account_statement' account.id %}" class="btn btn-primary btn-sm w-100 mb-2">
+                                <i class="fas fa-file-alt me-1"></i>View Account Statement
+                            </a>
+                            <a href="{% url 'accounts:journal_entry_create' %}" class="btn btn-success btn-sm w-100 mb-2">
+                                <i class="fas fa-plus me-1"></i>New Journal Entry
+                            </a>
+                            <a href="{% url 'accounts:journal_entry_list' %}" class="btn btn-info btn-sm w-100 mb-2">
+                                <i class="fas fa-list me-1"></i>View Journal Entries
+                            </a>
+                            {% if user.is_staff %}
+                            <a href="{% url 'accounts:debug_account' account.id %}" class="btn btn-warning btn-sm w-100">
+                                <i class="fas fa-bug me-1"></i>Debug Account
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Journal Entry Lines -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-history me-2"></i>Recent Journal Entry Lines</h5>
+                    <a href="{% url 'accounts:journal_entry_list' %}" class="btn btn-sm btn-outline-primary">
+                        View All <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_transactions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Description</th>
+                                        <th>Entry Type</th>
+                                        <th class="text-end">Amount</th>
+                                        <th class="text-end">Running Balance</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if account.opening_balance != 0 or account.opening_balance_date %}
+                                    <tr class="table-info">
+                                        <td>
+                                            {% if account.opening_balance_date %}
+                                                {{ account.opening_balance_date|date:"M d, Y" }}
+                                            {% else %}
+                                                <em>Opening</em>
+                                            {% endif %}
+                                        </td>
+                                        <td><strong>Opening Balance</strong></td>
+                                        <td><span class="badge bg-info">Opening</span></td>
+                                        <td class="text-end">
+                                            <strong class="{% if account.opening_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {{ currency_symbol }}{{ account.opening_balance|floatformat:2 }}
+                                            </strong>
+                                        </td>
+                                        <td class="text-end">
+                                            <strong class="{% if account.opening_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {{ currency_symbol }}{{ account.opening_balance|floatformat:2 }}
+                                            </strong>
+                                        </td>
+                                        <td>-</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% for line in recent_transactions %}
+                                    <tr>
+                                        <td>{{ line.journal_entry.date|date:"M d, Y" }}</td>
+                                        <td>
+                                            <div>{{ line.description|default:line.journal_entry.description|truncatechars:50 }}</div>
+                                            {% if line.journal_entry.reference %}
+                                            <small class="text-muted">Ref: {{ line.journal_entry.reference }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if line.entry_type == 'debit' %}
+                                                <span class="badge bg-danger">Debit</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Credit</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="{% if line.entry_type == 'debit' %}text-danger{% else %}text-success{% endif %}">
+                                                {% if line.entry_type == 'debit' %}+{% else %}-{% endif %}{{ currency_symbol }}{{ line.amount|floatformat:2 }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <strong class="{% if line.running_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {{ currency_symbol }}{{ line.running_balance|floatformat:2 }}
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'accounts:journal_entry_detail' line.journal_entry.pk %}" 
+                                               class="btn btn-sm btn-outline-info" title="View Journal Entry">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No journal entry lines found for this account.</p>
+                            <a href="{% url 'accounts:journal_entry_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>Create First Journal Entry
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

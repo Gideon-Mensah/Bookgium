@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block title %}Users - Bookgium{% endblock %}
+
+{% block page_title %}User Management{% endblock %}
+
+{% block content %}
+<!-- Search and Filter Section -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-users me-2"></i>
+            All Users
+        </h6>
+        {% if user.role == 'admin' or user.is_superuser %}
+        <a href="{% url 'user_create' %}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>
+            Add New User
+        </a>
+        {% endif %}
+    </div>
+    
+    <div class="card-body">
+        <!-- Search Form -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" 
+                           class="form-control" 
+                           name="search" 
+                           value="{{ search_query }}"
+                           placeholder="Search users...">
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <select name="role" class="form-select">
+                    <option value="all" {% if role_filter == 'all' %}selected{% endif %}>All Roles</option>
+                    {% for role_value, role_display in role_choices %}
+                        <option value="{{ role_value }}" {% if role_filter == role_value %}selected{% endif %}>
+                            {{ role_display }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-filter me-1"></i>
+                    Filter
+                </button>
+            </div>
+        </form>
+        
+        <!-- Users Table -->
+        {% if users %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>User</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th>Last Login</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user_obj in users %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle bg-primary text-white me-3">
+                                    {{ user_obj.first_name|first|default:user_obj.username|first }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold">
+                                        <a href="{% url 'user_detail' user_obj.pk %}" class="text-decoration-none">
+                                            {{ user_obj.get_full_name|default:user_obj.username }}
+                                        </a>
+                                    </div>
+                                    <small class="text-muted">{{ user_obj.email }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if user_obj.role == 'admin' %}primary{% elif user_obj.role == 'accountant' %}warning{% else %}info{% endif %}">
+                                {{ user_obj.get_role_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if user_obj.is_active %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Active
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times me-1"></i>Inactive
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ user_obj.date_joined|date:"M d, Y" }}</small>
+                        </td>
+                        <td>
+                            <small>{{ user_obj.last_login|date:"M d, Y g:i A"|default:"Never" }}</small>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'user_detail' user_obj.pk %}" 
+                                   class="btn btn-sm btn-outline-primary" 
+                                   title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                
+                                {% if user.role == 'admin' or user.is_superuser or user == user_obj %}
+                                <a href="{% url 'user_edit' user_obj.pk %}" 
+                                   class="btn btn-sm btn-outline-warning" 
+                                   title="Edit User">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                
+                                {% if user.role == 'admin' or user.is_superuser %}
+                                    {% if user_obj != user %}
+                                    <a href="{% url 'toggle_user_status' user_obj.pk %}" 
+                                       class="btn btn-sm btn-outline-{% if user_obj.is_active %}danger{% else %}success{% endif %}" 
+                                       title="{% if user_obj.is_active %}Deactivate{% else %}Activate{% endif %} User"
+                                       onclick="return confirm('Are you sure you want to {% if user_obj.is_active %}deactivate{% else %}activate{% endif %} this user?')">
+                                        <i class="fas fa-{% if user_obj.is_active %}user-slash{% else %}user-check{% endif %}"></i>
+                                    </a>
+                                    
+                                    <a href="{% url 'user_delete' user_obj.pk %}" 
+                                       class="btn btn-sm btn-outline-danger" 
+                                       title="Delete User">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="User pagination">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter != 'all' %}&role={{ role_filter }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter != 'all' %}&role={{ role_filter }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter != 'all' %}&role={{ role_filter }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter != 'all' %}&role={{ role_filter }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-5">
+            <i class="fas fa-users text-muted" style="font-size: 4rem;"></i>
+            <h4 class="text-muted mt-3">No Users Found</h4>
+            <p class="text-muted">
+                {% if search_query or role_filter != 'all' or status_filter != 'all' %}
+                    No users match your search criteria. Try adjusting your filters.
+                {% else %}
+                    There are no users in the system yet.
+                {% endif %}
+            </p>
+            {% if user.role == 'admin' or user.is_superuser %}
+            <a href="{% url 'user_create' %}" class="btn btn-primary">
+                <i class="fas fa-user-plus me-2"></i>
+                Add First User
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 16px;
+    }
+    
+    .btn-group .btn {
+        margin: 0 1px;
+    }
+    
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        color: #5a5c69;
+    }
+    
+    .badge {
+        font-size: 0.75em;
+    }
+</style>
+{% endblock %}

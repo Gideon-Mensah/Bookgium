@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Transaction Details - Bookgium{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-receipt me-2"></i>Transaction Details</h2>
+                <div>
+                    <a href="{% url 'accounts:transaction_update' transaction.pk %}" class="btn btn-outline-warning">
+                        <i class="fas fa-edit me-1"></i>Edit
+                    </a>
+                    <a href="{% url 'accounts:transaction_delete' transaction.pk %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash me-1"></i>Delete
+                    </a>
+                    <a href="{% url 'accounts:transaction_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to List
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="fas fa-info-circle me-2"></i>Transaction Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Account:</label>
+                                        <p>
+                                            <a href="{% url 'accounts:account_detail' transaction.account.pk %}" class="text-decoration-none">
+                                                {{ transaction.account.name }} ({{ transaction.account.code }})
+                                            </a>
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Transaction Type:</label>
+                                        <p>
+                                            {% if transaction.transaction_type == 'debit' %}
+                                                <span class="badge bg-danger fs-6">
+                                                    <i class="fas fa-minus me-1"></i>Debit
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-success fs-6">
+                                                    <i class="fas fa-plus me-1"></i>Credit
+                                                </span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Date:</label>
+                                        <p>{{ transaction.date|date:"F d, Y" }}</p>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Amount:</label>
+                                        <p>
+                                            <span class="fs-4 {% if transaction.transaction_type == 'debit' %}text-danger{% else %}text-success{% endif %}">
+                                                {% if transaction.transaction_type == 'debit' %}-{% else %}+{% endif %}{{ currency_symbol }}{{ transaction.amount|floatformat:2 }}
+                                            </span>
+                                        </p>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Created By:</label>
+                                        <p>{{ transaction.created_by.get_full_name|default:transaction.created_by.username }}</p>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Created At:</label>
+                                        <p>{{ transaction.created_at|date:"F d, Y H:i" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <label class="form-label fw-bold">Description:</label>
+                                <div class="p-3 bg-light rounded">
+                                    {{ transaction.description|default:"No description provided." }}
+                                </div>
+                            </div>
+
+                            {% if transaction.notes %}
+                            <div class="mt-4">
+                                <label class="form-label fw-bold">Notes:</label>
+                                <div class="p-3 bg-light rounded">
+                                    {{ transaction.notes }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Source Documents -->
+                    {% if transaction.source_documents.exists %}
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-paperclip me-2"></i>Attached Documents</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for document in transaction.source_documents.all %}
+                                <div class="border rounded p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">
+                                                <i class="fas fa-file{% if document.is_pdf %}-pdf text-danger{% elif document.is_image %}-image text-success{% else %} text-muted{% endif %} me-2"></i>
+                                                {{ document.title }}
+                                            </h6>
+                                            <p class="text-muted small mb-2">
+                                                <span class="badge bg-secondary">{{ document.get_document_type_display }}</span>
+                                                • {{ document.file_size_formatted }}
+                                                • Uploaded {{ document.uploaded_at|date:"M d, Y" }}
+                                                {% if document.uploaded_by %}by {{ document.uploaded_by.get_full_name|default:document.uploaded_by.username }}{% endif %}
+                                            </p>
+                                            {% if document.description %}
+                                                <p class="small text-muted mb-2">{{ document.description }}</p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="ms-3">
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'accounts:download_source_document' document.pk %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'accounts:delete_source_document' document.pk %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this document?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <!-- Account Summary -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-chart-line me-2"></i>Account Summary</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <small class="text-muted">Account Balance</small>
+                                <h4 class="{% if transaction.account.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ currency_symbol }}{{ transaction.account.balance|floatformat:2 }}
+                                </h4>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <small class="text-muted">Account Type</small>
+                                <p class="mb-0">
+                                    <span class="badge bg-primary">{{ transaction.account.get_account_type_display }}</span>
+                                </p>
+                            </div>
+
+                            <div class="mb-3">
+                                <small class="text-muted">Status</small>
+                                <p class="mb-0">
+                                    {% if transaction.account.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'accounts:account_detail' transaction.account.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>View Account
+                                </a>
+                                <a href="{% url 'accounts:transaction_list' %}?account={{ transaction.account.pk }}" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-list me-1"></i>All Transactions
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'accounts:transaction_create' %}?account={{ transaction.account.pk }}" class="btn btn-success btn-sm">
+                                    <i class="fas fa-plus me-1"></i>Add New Transaction
+                                </a>
+                                <a href="{% url 'accounts:transaction_update' transaction.pk %}" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-edit me-1"></i>Edit This Transaction
+                                </a>
+                                <hr>
+                                <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

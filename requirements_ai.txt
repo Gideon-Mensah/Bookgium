@@ -1,0 +1,4 @@
+# AI Assistant Requirements
+openai>=1.0.0
+tiktoken>=0.5.0  # For token counting
+python-dotenv>=1.0.0  # For environment variables

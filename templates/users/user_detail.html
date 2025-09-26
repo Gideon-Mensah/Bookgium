@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ user_obj.get_full_name|default:user_obj.username }} - Bookgium{% endblock %}
+
+{% block page_title %}User Details{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- User Information Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-user me-2"></i>
+                    User Information
+                </h6>
+                <div class="btn-group">
+                    {% if user == user_obj or user.role == 'admin' or user.is_superuser %}
+                    <a href="{% url 'user_edit' user_obj.pk %}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-edit me-1"></i>
+                        Edit
+                    </a>
+                    {% endif %}
+                    
+                    {% if user.role == 'admin' or user.is_superuser %}
+                        {% if user_obj != user %}
+                        <a href="{% url 'toggle_user_status' user_obj.pk %}" 
+                           class="btn btn-{% if user_obj.is_active %}danger{% else %}success{% endif %} btn-sm"
+                           onclick="return confirm('Are you sure you want to {% if user_obj.is_active %}deactivate{% else %}activate{% endif %} this user?')">
+                            <i class="fas fa-{% if user_obj.is_active %}user-slash{% else %}user-check{% endif %} me-1"></i>
+                            {% if user_obj.is_active %}Deactivate{% else %}Activate{% endif %}
+                        </a>
+                        
+                        <a href="{% url 'user_delete' user_obj.pk %}" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash me-1"></i>
+                            Delete
+                        </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <label class="form-label text-muted">Username</label>
+                            <div class="fw-bold fs-5">{{ user_obj.username }}</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-muted">Email Address</label>
+                            <div class="fw-bold">
+                                {% if user_obj.email %}
+                                    <a href="mailto:{{ user_obj.email }}" class="text-decoration-none">
+                                        <i class="fas fa-envelope me-2"></i>
+                                        {{ user_obj.email }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Not provided</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-muted">Full Name</label>
+                            <div class="fw-bold">
+                                {{ user_obj.get_full_name|default:"Not provided" }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <label class="form-label text-muted">Role</label>
+                            <div>
+                                <span class="badge bg-{% if user_obj.role == 'admin' %}primary{% elif user_obj.role == 'accountant' %}warning{% else %}info{% endif %} fs-6">
+                                    <i class="fas fa-user-tag me-1"></i>
+                                    {{ user_obj.get_role_display }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-muted">Status</label>
+                            <div>
+                                {% if user_obj.is_active %}
+                                    <span class="badge bg-success fs-6">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        Active
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger fs-6">
+                                        <i class="fas fa-times-circle me-1"></i>
+                                        Inactive
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-muted">Permissions</label>
+                            <div>
+                                {% if user_obj.is_superuser %}
+                                    <span class="badge bg-danger fs-6">
+                                        <i class="fas fa-crown me-1"></i>
+                                        Superuser
+                                    </span>
+                                {% endif %}
+                                {% if user_obj.is_staff %}
+                                    <span class="badge bg-warning fs-6">
+                                        <i class="fas fa-user-shield me-1"></i>
+                                        Staff
+                                    </span>
+                                {% endif %}
+                                {% if not user_obj.is_superuser and not user_obj.is_staff %}
+                                    <span class="text-muted">Regular User</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Account Activity Card -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-clock me-2"></i>
+                    Account Activity
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Member Since</label>
+                            <div class="fw-bold">
+                                <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                {{ user_obj.date_joined|date:"F d, Y" }}
+                            </div>
+                            <small class="text-muted">{{ user_obj.date_joined|timesince }} ago</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Last Login</label>
+                            <div class="fw-bold">
+                                {% if user_obj.last_login %}
+                                    <i class="fas fa-sign-in-alt me-2 text-success"></i>
+                                    {{ user_obj.last_login|date:"F d, Y g:i A" }}
+                                {% else %}
+                                    <span class="text-muted">Never logged in</span>
+                                {% endif %}
+                            </div>
+                            {% if user_obj.last_login %}
+                                <small class="text-muted">{{ user_obj.last_login|timesince }} ago</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Activity Placeholder -->
+                <div class="mt-4">
+                    <h6 class="text-muted">Recent Activity</h6>
+                    <div class="text-center py-4">
+                        <i class="fas fa-history text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2 mb-0">No recent activity recorded</p>
+                        <small class="text-muted">User activities will appear here when available</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Profile Picture Card -->
+        <div class="card shadow mb-4">
+            <div class="card-body text-center">
+                <div class="avatar-large bg-primary text-white mx-auto mb-3">
+                    {{ user_obj.first_name|first|default:user_obj.username|first }}
+                </div>
+                <h5 class="card-title">{{ user_obj.get_full_name|default:user_obj.username }}</h5>
+                <p class="text-muted">{{ user_obj.get_role_display }}</p>
+                
+                {% if user_obj == user %}
+                <div class="d-grid gap-2">
+                    <a href="{% url 'user_edit' user_obj.pk %}" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>
+                        Edit Profile
+                    </a>
+                    <a href="{% url 'password_change' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-key me-2"></i>
+                        Change Password
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Quick Actions Card -->
+        {% if user.role == 'admin' or user.is_superuser %}
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-bolt me-2"></i>
+                    Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'user_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-users me-2"></i>
+                        All Users
+                    </a>
+                    <a href="{% url 'user_create' %}" class="btn btn-outline-success">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Add New User
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mt-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'user_list' %}">Users</a></li>
+        <li class="breadcrumb-item active">{{ user_obj.get_full_name|default:user_obj.username }}</li>
+    </ol>
+</nav>
+
+<style>
+    .avatar-large {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 2rem;
+    }
+    
+    .badge.fs-6 {
+        font-size: 0.9rem !important;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+</style>
+{% endblock %}

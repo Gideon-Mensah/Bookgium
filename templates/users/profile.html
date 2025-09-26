@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - Bookgium{% endblock %}
+
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Profile Information Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-user me-2"></i>
+                    Profile Information
+                </h6>
+                <a href="{% url 'user_edit' user.pk %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-edit me-1"></i>
+                    Edit Profile
+                </a>
+            </div>
+            
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <label class="form-label text-muted">Username</label>
+                            <div class="fw-bold fs-5">{{ user_obj.username }}</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-muted">Email Address</label>
+                            <div class="fw-bold">
+                                {% if user_obj.email %}
+                                    {{ user_obj.email }}
+                                {% else %}
+                                    <span class="text-muted">Not provided</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <label class="form-label text-muted">Full Name</label>
+                            <div class="fw-bold">
+                                {{ user_obj.get_full_name|default:"Not provided" }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-muted">Role</label>
+                            <div>
+                                <span class="badge bg-{% if user_obj.role == 'admin' %}primary{% elif user_obj.role == 'accountant' %}warning{% else %}info{% endif %} fs-6">
+                                    <i class="fas fa-user-tag me-1"></i>
+                                    {{ user_obj.get_role_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Member Since</label>
+                            <div class="fw-bold">
+                                <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                {{ user_obj.date_joined|date:"F d, Y" }}
+                            </div>
+                            <small class="text-muted">{{ user_obj.date_joined|timesince }} ago</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Last Login</label>
+                            <div class="fw-bold">
+                                {% if user_obj.last_login %}
+                                    <i class="fas fa-sign-in-alt me-2 text-success"></i>
+                                    {{ user_obj.last_login|date:"F d, Y g:i A" }}
+                                {% else %}
+                                    <span class="text-muted">This session</span>
+                                {% endif %}
+                            </div>
+                            {% if user_obj.last_login %}
+                                <small class="text-muted">{{ user_obj.last_login|timesince }} ago</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Account Security Card -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Account Security
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="me-3">
+                                <i class="fas fa-key fa-2x text-warning"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Password</h6>
+                                <small class="text-muted">Last changed: Unknown</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <a href="{% url 'password_change' %}" class="btn btn-outline-warning">
+                            <i class="fas fa-key me-2"></i>
+                            Change Password
+                        </a>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-user-check fa-2x text-success"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Account Status</h6>
+                                <small class="text-success">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    Active and verified
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <span class="badge bg-success fs-6">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            Secure Account
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Profile Picture Card -->
+        <div class="card shadow mb-4">
+            <div class="card-body text-center">
+                <div class="avatar-large bg-primary text-white mx-auto mb-3">
+                    {{ user_obj.first_name|first|default:user_obj.username|first }}
+                </div>
+                <h5 class="card-title">{{ user_obj.get_full_name|default:user_obj.username }}</h5>
+                <p class="text-muted">{{ user_obj.get_role_display }}</p>
+                <p class="text-muted">
+                    <i class="fas fa-envelope me-1"></i>
+                    {{ user_obj.email|default:"No email provided" }}
+                </p>
+            </div>
+        </div>
+        
+        <!-- Quick Actions Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-bolt me-2"></i>
+                    Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'user_edit' user_obj.pk %}" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>
+                        Edit Profile
+                    </a>
+                    <a href="{% url 'currency_preference' %}" class="btn btn-outline-success">
+                        <i class="fas fa-coins me-2"></i>
+                        Currency Settings
+                    </a>
+                    <a href="{% url 'password_change' %}" class="btn btn-outline-warning">
+                        <i class="fas fa-key me-2"></i>
+                        Change Password
+                    </a>
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-tachometer-alt me-2"></i>
+                        Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Account Stats Card -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Account Statistics
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-2">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <div class="h4 mb-0 text-primary">{{ user_obj.date_joined|timesince|truncatewords:1 }}</div>
+                                <small class="text-muted">Member For</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="h4 mb-0 text-success">Active</div>
+                            <small class="text-muted">Status</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-large {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 2rem;
+    }
+    
+    .badge.fs-6 {
+        font-size: 0.9rem !important;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+</style>
+{% endblock %}

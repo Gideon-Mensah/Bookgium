@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Employees{% endblock %}
+
+{% block extra_css %}
+<style>
+    .employee-card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border-radius: 0.375rem;
+        transition: all 0.15s ease-in-out;
+    }
+    
+    .employee-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .employee-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .search-form {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-users me-2"></i>Employees
+                </h1>
+                <a href="{% url 'payroll:employee_create' %}" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Add Employee
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Form -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <form method="get" class="search-form">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ request.GET.search }}" 
+                               placeholder="Search by name, ID, email, or position...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-control" id="status" name="status">
+                            <option value="">All Statuses</option>
+                            <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                            <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                            <option value="terminated" {% if request.GET.status == 'terminated' %}selected{% endif %}>Terminated</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                        <a href="{% url 'payroll:employee_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Clear
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Employee List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card employee-card">
+                <div class="card-body">
+                    {% if employees %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Employee ID</th>
+                                        <th>Name</th>
+                                        <th>Position</th>
+                                        <th>Department</th>
+                                        <th>Employment Type</th>
+                                        <th>Status</th>
+                                        <th>Hire Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for employee in employees %}
+                                    <tr>
+                                        <td>
+                                            <div class="employee-avatar">
+                                                {{ employee.first_name|first }}{{ employee.last_name|first }}
+                                            </div>
+                                        </td>
+                                        <td class="font-weight-bold">{{ employee.employee_id }}</td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ employee.full_name }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ employee.email }}</small>
+                                            </div>
+                                        </td>
+                                        <td>{{ employee.position|default:"-" }}</td>
+                                        <td>{{ employee.department|default:"-" }}</td>
+                                        <td>
+                                            {% if employee.employment_type == 'full_time' %}
+                                                <span class="badge bg-primary">Full Time</span>
+                                            {% elif employee.employment_type == 'part_time' %}
+                                                <span class="badge bg-info">Part Time</span>
+                                            {% elif employee.employment_type == 'contract' %}
+                                                <span class="badge bg-warning">Contract</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if employee.employment_status == 'active' %}
+                                                <span class="badge bg-success status-badge">Active</span>
+                                            {% elif employee.employment_status == 'inactive' %}
+                                                <span class="badge bg-warning status-badge">Inactive</span>
+                                            {% elif employee.employment_status == 'terminated' %}
+                                                <span class="badge bg-danger status-badge">Terminated</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ employee.hire_date|date:"M d, Y" }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'payroll:employee_detail' employee.pk %}" 
+                                                   class="btn btn-outline-primary" 
+                                                   data-bs-toggle="tooltip" 
+                                                   title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'payroll:employee_update' employee.pk %}" 
+                                                   class="btn btn-outline-success" 
+                                                   data-bs-toggle="tooltip" 
+                                                   title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if is_paginated %}
+                        <nav aria-label="Employee pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">First</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Previous</a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Next</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Last</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Employees Found</h5>
+                            {% if request.GET.search or request.GET.status %}
+                                <p class="text-muted">No employees match your search criteria.</p>
+                                <a href="{% url 'payroll:employee_list' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-times"></i> Clear Filters
+                                </a>
+                            {% else %}
+                                <p class="text-muted">Get started by adding your first employee.</p>
+                                <a href="{% url 'payroll:employee_create' %}" class="btn btn-primary">
+                                    <i class="fas fa-user-plus"></i> Add Employee
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Initialize tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+        
+        // Auto-submit search form on status change
+        $('#status').change(function() {
+            $(this).closest('form').submit();
+        });
+    });
+</script>
+{% endblock %}

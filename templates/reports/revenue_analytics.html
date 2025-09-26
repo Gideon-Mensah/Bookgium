@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Revenue Analytics - Reports{% endblock %}
+{% block page_title %}Revenue Analytics{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3>Revenue Analytics</h3>
+                <p class="text-muted mb-0">Performance insights and trends</p>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-primary" onclick="window.print()">
+                    <i class="fas fa-print me-1"></i>Print
+                </button>
+                <button type="button" class="btn btn-primary" onclick="refreshCharts()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Trend Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Monthly Revenue Trend (Last 12 Months)</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" style="height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Customers -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Top Customers by Revenue</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Customer</th>
+                                <th class="text-center">Invoices</th>
+                                <th class="text-end">Total Revenue</th>
+                                <th class="text-end">Avg Invoice</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in top_customers %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary">{{ forloop.counter }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ customer.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ customer.email }}</small>
+                                </td>
+                                <td class="text-center">
+                                    {{ customer.invoices.count }}
+                                    <br>
+                                    <small class="text-muted">invoices</small>
+                                </td>
+                                <td class="text-end">
+                                    <strong>{{ currency_symbol }}{{ customer.total_revenue|floatformat:2 }}</strong>
+                                </td>
+                                <td class="text-end">
+                                    {% if customer.invoices.count > 0 %}
+                                        {{ currency_symbol }}{{ customer.avg_invoice|floatformat:2 }}
+                                    {% else %}
+                                        {{ currency_symbol }}0.00
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    No customer revenue data available.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Revenue Distribution</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueDistributionChart" style="height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Data for JavaScript -->
+<script type="application/json" id="revenue-data">
+{{ monthly_revenue|safe }}
+</script>
+
+<script type="application/json" id="customer-data">
+[
+    {% for customer in top_customers|slice:":5" %}
+    {
+        "name": "{{ customer.name }}",
+        "revenue": {{ customer.total_revenue|default:0 }}
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+]
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const revenueData = JSON.parse(document.getElementById('revenue-data').textContent);
+    const customerData = JSON.parse(document.getElementById('customer-data').textContent);
+    
+    // Revenue Trend Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    const revenueChart = new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: revenueData.map(item => item.month_name),
+            datasets: [{
+                label: 'Monthly Revenue',
+                data: revenueData.map(item => item.revenue),
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '{{ currency_symbol }}' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Revenue: {{ currency_symbol }}' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Customer Revenue Distribution Chart
+    const distributionCtx = document.getElementById('revenueDistributionChart').getContext('2d');
+    const distributionChart = new Chart(distributionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: customerData.map(item => item.name),
+            datasets: [{
+                data: customerData.map(item => item.revenue),
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed * 100) / total).toFixed(1);
+                            return context.label + ': {{ currency_symbol }}' + context.parsed.toLocaleString() + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Store chart references for refresh function
+    window.revenueChart = revenueChart;
+    window.distributionChart = distributionChart;
+});
+
+function refreshCharts() {
+    // This would typically reload the page or fetch new data via AJAX
+    // For now, we'll just reload the page
+    window.location.reload();
+}
+</script>
+
+<style>
+@media print {
+    .btn-group, canvas {
+        display: none !important;
+    }
+    
+    .card {
+        break-inside: avoid;
+    }
+}
+
+.table th, .table td {
+    vertical-align: middle;
+}
+
+.table small {
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load client_extras %}
+
+{% block title %}Client List{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Client List</h1>
+            <p class="text-muted">Manage all client organizations</p>
+        </div>
+        <div>
+            <a href="{% url 'clients:create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add New Client
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    {{ search_form.search.label_tag }}
+                    {{ search_form.search }}
+                </div>
+                <div class="col-md-2">
+                    {{ search_form.status.label_tag }}
+                    {{ search_form.status }}
+                </div>
+                <div class="col-md-2">
+                    {{ search_form.plan.label_tag }}
+                    {{ search_form.plan }}
+                </div>
+                <div class="col-md-2">
+                    {{ search_form.currency.label_tag }}
+                    {{ search_form.currency }}
+                </div>
+                <div class="col-md-1">
+                    {{ search_form.active.label_tag }}
+                    {{ search_form.active }}
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i>Filter
+                    </button>
+                    <a href="{% url 'clients:list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Clients Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-building me-2"></i>
+                Clients 
+                <span class="badge bg-secondary ms-2">{{ clients|length }}</span>
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            {% if clients %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Organization</th>
+                                <th>Contact</th>
+                                <th>Plan</th>
+                                <th>Status</th>
+                                <th>Monthly Fee</th>
+                                <th>Next Due</th>
+                                <th>Account Manager</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for client in clients %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if client.logo %}
+                                                <img src="{{ client.logo.url }}" alt="{{ client.name }}" 
+                                                     class="rounded me-2" width="32" height="32">
+                                            {% else %}
+                                                <div class="bg-secondary rounded d-flex align-items-center justify-content-center me-2" 
+                                                     style="width: 32px; height: 32px;">
+                                                    <i class="fas fa-building text-white"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="mb-0">
+                                                    <a href="{% url 'clients:detail' client.pk %}" class="text-decoration-none">
+                                                        {{ client.name }}
+                                                    </a>
+                                                </h6>
+                                                <small class="text-muted">{{ client.slug }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            {{ client.email }}
+                                            {% if client.phone %}
+                                                <br><small class="text-muted">{{ client.phone }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ client.get_plan_type_display }}</span>
+                                        {% if client.on_trial %}
+                                            <br><small class="text-warning">Trial</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if client.subscription_status == 'active' %}success{% elif client.subscription_status == 'trial' %}warning{% elif client.subscription_status == 'expired' %}danger{% else %}secondary{% endif %}">
+                                            {{ client.get_subscription_status_display }}
+                                        </span>
+                                        {% if not client.is_active %}
+                                            <br><small class="text-danger">Inactive</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ client.monthly_fee|format_currency:client.currency }}</strong>
+                                        <br><small class="text-muted">{{ client.currency }}</small>
+                                    </td>
+                                    <td>
+                                        {% if client.paid_until %}
+                                            {{ client.paid_until|date:"M d, Y" }}
+                                            {% if client.days_until_expiry <= 7 %}
+                                                <br><small class="text-warning">
+                                                    <i class="fas fa-clock me-1"></i>{{ client.days_until_expiry }} days
+                                                </small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">No date set</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if client.account_manager %}
+                                            {{ client.account_manager.get_full_name|default:client.account_manager.username }}
+                                        {% else %}
+                                            <span class="text-muted">Unassigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'clients:detail' client.pk %}" 
+                                               class="btn btn-sm btn-outline-primary" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'clients:edit' client.pk %}" 
+                                               class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% if client.is_active %}
+                                                <a href="{% url 'clients:suspend' client.pk %}" 
+                                                   class="btn btn-sm btn-outline-warning" title="Suspend"
+                                                   onclick="return confirm('Are you sure you want to suspend this client?')">
+                                                    <i class="fas fa-pause"></i>
+                                                </a>
+                                            {% else %}
+                                                <a href="{% url 'clients:activate' client.pk %}" 
+                                                   class="btn btn-sm btn-outline-success" title="Activate"
+                                                   onclick="return confirm('Are you sure you want to activate this client?')">
+                                                    <i class="fas fa-play"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                    <div class="card-footer">
+                        <nav aria-label="Client pagination">
+                            <ul class="pagination justify-content-center mb-0">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.plan %}&plan={{ request.GET.plan }}{% endif %}{% if request.GET.active %}&active={{ request.GET.active }}{% endif %}">
+                                            <i class="fas fa-angle-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.plan %}&plan={{ request.GET.plan }}{% endif %}{% if request.GET.active %}&active={{ request.GET.active }}{% endif %}">
+                                            <i class="fas fa-angle-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.plan %}&plan={{ request.GET.plan }}{% endif %}{% if request.GET.active %}&active={{ request.GET.active }}{% endif %}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.plan %}&plan={{ request.GET.plan }}{% endif %}{% if request.GET.active %}&active={{ request.GET.active }}{% endif %}">
+                                            <i class="fas fa-angle-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.plan %}&plan={{ request.GET.plan }}{% endif %}{% if request.GET.active %}&active={{ request.GET.active }}{% endif %}">
+                                            <i class="fas fa-angle-double-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No clients found</h5>
+                    <p class="text-muted">Start by adding your first client organization.</p>
+                    <a href="{% url 'clients:create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add New Client
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

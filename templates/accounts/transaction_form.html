@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.pk %}Edit Transaction{% else %}Add Transaction{% endif %} - Bookgium
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div                                     <strong class="{% if transaction.transaction_type == 'debit' %}text-danger{% else %}text-success{% endif %}">
+                                        {% if transaction.transaction_type == 'debit' %}-{% else %}+{% endif %}{{ currency_symbol }}{{ transaction.amount|floatformat:2 }}
+                                    </strong>ss="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-{% if form.instance.pk %}edit{% else %}plus{% endif %} me-2"></i>
+                    {% if form.instance.pk %}Edit Transaction{% else %}Add New Transaction{% endif %}
+                </h2>
+                <a href="{% url 'accounts:transaction_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to List
+                </a>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-form me-2"></i>Transaction Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                
+                                {% if form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        {{ form.non_field_errors }}
+                                    </div>
+                                {% endif %}
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.account.id_for_label }}" class="form-label">
+                                                <i class="fas fa-building me-1"></i>{{ form.account.label }}
+                                            </label>
+                                            {{ form.account }}
+                                            {% if form.account.errors %}
+                                                <div class="text-danger small">{{ form.account.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.transaction_type.id_for_label }}" class="form-label">
+                                                <i class="fas fa-exchange-alt me-1"></i>{{ form.transaction_type.label }}
+                                            </label>
+                                            {{ form.transaction_type }}
+                                            {% if form.transaction_type.errors %}
+                                                <div class="text-danger small">{{ form.transaction_type.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.amount.id_for_label }}" class="form-label">
+                                                <i class="fas fa-dollar-sign me-1"></i>{{ form.amount.label }}
+                                            </label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">{{ currency_symbol }}</span>
+                                                {{ form.amount }}
+                                            </div>
+                                            {% if form.amount.errors %}
+                                                <div class="text-danger small">{{ form.amount.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.date.id_for_label }}" class="form-label">
+                                                <i class="fas fa-calendar me-1"></i>{{ form.date.label }}
+                                            </label>
+                                            {{ form.date }}
+                                            {% if form.date.errors %}
+                                                <div class="text-danger small">{{ form.date.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.description.id_for_label }}" class="form-label">
+                                        <i class="fas fa-align-left me-1"></i>{{ form.description.label }}
+                                    </label>
+                                    {{ form.description }}
+                                    {% if form.description.errors %}
+                                        <div class="text-danger small">{{ form.description.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                {% if form.notes %}
+                                <div class="mb-3">
+                                    <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                        <i class="fas fa-sticky-note me-1"></i>{{ form.notes.label }}
+                                    </label>
+                                    {{ form.notes }}
+                                    {% if form.notes.errors %}
+                                        <div class="text-danger small">{{ form.notes.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Optional additional notes or comments</small>
+                                </div>
+                                {% endif %}
+
+                                <!-- Source Documents Section -->
+                                <div class="card mt-4">
+                                    <div class="card-header">
+                                        <h6><i class="fas fa-paperclip me-2"></i>Supporting Documents</h6>
+                                        <small class="text-muted">Upload receipts, invoices, or other evidence for this transaction</small>
+                                    </div>
+                                    <div class="card-body">
+                                        {{ document_formset.management_form }}
+                                        <div id="document-forms">
+                                            {% for form in document_formset %}
+                                                <div class="document-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
+                                                    {% if form.instance.pk %}
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <h6 class="mb-0">{{ form.instance.title }}</h6>
+                                                            {% if form.DELETE %}
+                                                                <div class="form-check">
+                                                                    {{ form.DELETE }}
+                                                                    <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}">
+                                                                        <i class="fas fa-trash"></i> Delete
+                                                                    </label>
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    {% endif %}
+                                                    
+                                                    {% for hidden in form.hidden_fields %}
+                                                        {{ hidden }}
+                                                    {% endfor %}
+                                                    
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <div class="mb-3">
+                                                                <label class="form-label">{{ form.title.label }}</label>
+                                                                {{ form.title }}
+                                                                {% if form.title.errors %}
+                                                                    <div class="text-danger small">{{ form.title.errors }}</div>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="mb-3">
+                                                                <label class="form-label">{{ form.document_type.label }}</label>
+                                                                {{ form.document_type }}
+                                                                {% if form.document_type.errors %}
+                                                                    <div class="text-danger small">{{ form.document_type.errors }}</div>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label class="form-label">{{ form.file.label }}</label>
+                                                        {{ form.file }}
+                                                        {% if form.instance.pk and form.instance.file %}
+                                                            <div class="mt-2">
+                                                                <small class="text-muted">
+                                                                    Current file: 
+                                                                    <a href="{% url 'accounts:download_source_document' form.instance.pk %}" target="_blank" class="text-decoration-none">
+                                                                        <i class="fas fa-file me-1"></i>{{ form.instance.filename }}
+                                                                    </a>
+                                                                    ({{ form.instance.file_size_formatted }})
+                                                                </small>
+                                                            </div>
+                                                        {% endif %}
+                                                        {% if form.file.errors %}
+                                                            <div class="text-danger small">{{ form.file.errors }}</div>
+                                                        {% endif %}
+                                                        <small class="form-text text-muted">
+                                                            Supported formats: PDF, images (JPG, PNG, GIF), Office documents. Max size: 10MB
+                                                        </small>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label class="form-label">{{ form.description.label }}</label>
+                                                        {{ form.description }}
+                                                        {% if form.description.errors %}
+                                                            <div class="text-danger small">{{ form.description.errors }}</div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        
+                                        <div class="text-center">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="add-document-form">
+                                                <i class="fas fa-plus me-1"></i>Add Another Document
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex gap-2 mt-4">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i>
+                                        {% if form.instance.pk %}Update Transaction{% else %}Save Transaction{% endif %}
+                                    </button>
+                                    <a href="{% url 'accounts:transaction_list' %}" class="btn btn-secondary">
+                                        <i class="fas fa-times me-1"></i>Cancel
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <!-- Help Card -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-question-circle me-2"></i>Transaction Types</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <h6 class="text-success"><i class="fas fa-plus me-1"></i>Credit</h6>
+                                <small class="text-muted">
+                                    Money coming into the account (deposits, income, payments received)
+                                </small>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="text-danger"><i class="fas fa-minus me-1"></i>Debit</h6>
+                                <small class="text-muted">
+                                    Money going out of the account (withdrawals, expenses, payments made)
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Transactions Preview -->
+                    {% if recent_transactions %}
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-history me-2"></i>Recent Transactions</h6>
+                        </div>
+                        <div class="card-body">
+                            {% for transaction in recent_transactions|slice:":5" %}
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                <div>
+                                    <small class="text-muted">{{ transaction.date|date:"M d" }}</small>
+                                    <br>
+                                    <small>{{ transaction.description|truncatechars:20 }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <small class="{% if transaction.transaction_type == 'debit' %}text-danger{% else %}text-success{% endif %}">
+                                        {% if transaction.transaction_type == 'debit' %}-{% else %}+{% endif %}${{ transaction.amount|floatformat:2 }}
+                                    </small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            <div class="text-center mt-3">
+                                <a href="{% url 'accounts:transaction_list' %}" class="btn btn-sm btn-outline-primary">
+                                    View All <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-focus on the first form field
+document.addEventListener('DOMContentLoaded', function() {
+    const firstInput = document.querySelector('form input, form select, form textarea');
+    if (firstInput) {
+        firstInput.focus();
+    }
+});
+
+// Amount input formatting
+document.addEventListener('DOMContentLoaded', function() {
+    const amountInput = document.getElementById('{{ form.amount.id_for_label }}');
+    if (amountInput) {
+        amountInput.addEventListener('input', function() {
+            // Remove any non-numeric characters except decimal point
+            this.value = this.value.replace(/[^0-9.]/g, '');
+            
+            // Ensure only one decimal point
+            const parts = this.value.split('.');
+            if (parts.length > 2) {
+                this.value = parts[0] + '.' + parts.slice(1).join('');
+            }
+            
+            // Limit to 2 decimal places
+            if (parts[1] && parts[1].length > 2) {
+                this.value = parts[0] + '.' + parts[1].substring(0, 2);
+            }
+        });
+    }
+});
+
+// Document formset management
+document.addEventListener('DOMContentLoaded', function() {
+    const documentFormsContainer = document.getElementById('document-forms');
+    const addDocumentBtn = document.getElementById('add-document-form');
+    const totalFormsInput = document.querySelector('[name$="-TOTAL_FORMS"]');
+    
+    if (addDocumentBtn && documentFormsContainer && totalFormsInput) {
+        // Get the empty form template
+        const emptyFormTemplate = documentFormsContainer.querySelector('.document-form:last-child');
+        
+        addDocumentBtn.addEventListener('click', function() {
+            const currentFormCount = parseInt(totalFormsInput.value);
+            const maxForms = parseInt(document.querySelector('[name$="-MAX_NUM_FORMS"]').value) || 5;
+            
+            if (currentFormCount >= maxForms) {
+                alert('Maximum number of documents reached.');
+                return;
+            }
+            
+            // Clone the template and update indices
+            const newForm = emptyFormTemplate.cloneNode(true);
+            const newFormIndex = currentFormCount;
+            
+            // Update form index attribute
+            newForm.setAttribute('data-form-index', newFormIndex);
+            
+            // Update all input names and IDs
+            const inputs = newForm.querySelectorAll('input, select, textarea');
+            inputs.forEach(function(input) {
+                const name = input.getAttribute('name');
+                const id = input.getAttribute('id');
+                
+                if (name) {
+                    input.setAttribute('name', name.replace(/-\d+-/, `-${newFormIndex}-`));
+                }
+                if (id) {
+                    input.setAttribute('id', id.replace(/-\d+-/, `-${newFormIndex}-`));
+                }
+                
+                // Clear values for new form
+                if (input.type !== 'hidden') {
+                    input.value = '';
+                }
+            });
+            
+            // Update labels
+            const labels = newForm.querySelectorAll('label');
+            labels.forEach(function(label) {
+                const forAttr = label.getAttribute('for');
+                if (forAttr) {
+                    label.setAttribute('for', forAttr.replace(/-\d+-/, `-${newFormIndex}-`));
+                }
+            });
+            
+            // Add to container
+            documentFormsContainer.appendChild(newForm);
+            
+            // Update total forms count
+            totalFormsInput.value = currentFormCount + 1;
+            
+            // Show delete buttons if more than one form
+            updateDeleteButtons();
+        });
+    }
+    
+    function updateDeleteButtons() {
+        const forms = documentFormsContainer.querySelectorAll('.document-form');
+        forms.forEach(function(form, index) {
+            const deleteCheckbox = form.querySelector('[name$="-DELETE"]');
+            if (deleteCheckbox) {
+                deleteCheckbox.closest('.form-check').style.display = forms.length > 1 ? 'block' : 'none';
+            }
+        });
+    }
+    
+    // Initial setup
+    updateDeleteButtons();
+});
+</script>
+{% endblock %}

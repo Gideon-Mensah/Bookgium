@@ -1,0 +1,530 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Opening Balance Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        border-left: 4px solid;
+        transition: transform 0.2s;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .stats-card.primary {
+        border-left-color: #007bff;
+    }
+    
+    .stats-card.success {
+        border-left-color: #28a745;
+    }
+    
+    .stats-card.warning {
+        border-left-color: #ffc107;
+    }
+    
+    .stats-card.info {
+        border-left-color: #17a2b8;
+    }
+    
+    .method-card {
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .method-card:hover {
+        border-color: #007bff;
+        box-shadow: 0 4px 15px rgba(0,123,255,0.1);
+    }
+    
+    .method-description {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .account-table th {
+        background-color: #f8f9fa;
+        border-top: none;
+    }
+    
+    .balance-positive {
+        color: #28a745;
+    }
+    
+    .balance-negative {
+        color: #dc3545;
+    }
+    
+    .balance-zero {
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-calculator me-2"></i>
+            Opening Balance Management
+        </h1>
+        <div class="btn-group">
+            <a href="{% url 'accounts:download_opening_balance_template' %}" class="btn btn-outline-info">
+                <i class="fas fa-download me-1"></i>Template
+            </a>
+            <a href="{% url 'accounts:export_current_opening_balances' %}" class="btn btn-outline-success">
+                <i class="fas fa-file-export me-1"></i>Export
+            </a>
+            <a href="{% url 'accounts:chart_of_accounts' %}" class="btn btn-secondary">
+                <i class="fas fa-sitemap me-1"></i>Chart of Accounts
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card primary">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="card-title text-muted mb-0">Total Accounts</h5>
+                            <h2 class="mb-0">{{ total_accounts }}</h2>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-list-ul fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card success">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="card-title text-muted mb-0">With Balances</h5>
+                            <h2 class="mb-0">{{ accounts_with_balances_count }}</h2>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card warning">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="card-title text-muted mb-0">Without Balances</h5>
+                            <h2 class="mb-0">{{ accounts_without_balances_count }}</h2>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card info">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="card-title text-muted mb-0">Total Balance</h5>
+                            <h2 class="mb-0 {% if total_opening_balance > 0 %}text-success{% elif total_opening_balance < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                {{ currency_symbol }}{{ total_opening_balance|floatformat:2 }}
+                            </h2>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-coins fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Opening Balance Setup Methods -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-cogs me-2"></i>
+                Setup Opening Balances
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{% url 'accounts:process_opening_balances' %}" enctype="multipart/form-data" id="opening-balance-form">
+                {% csrf_token %}
+                
+                <!-- Common Fields -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="{{ form.opening_date.id_for_label }}" class="form-label">Opening Date</label>
+                        {{ form.opening_date }}
+                        <div class="form-text">{{ form.opening_date.help_text }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check mt-4">
+                            {{ form.create_journal_entry }}
+                            <label class="form-check-label" for="{{ form.create_journal_entry.id_for_label }}">
+                                {{ form.create_journal_entry.label }}
+                            </label>
+                            <div class="form-text">{{ form.create_journal_entry.help_text }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Method Selection -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card method-card h-100" data-method="manual">
+                            <div class="card-body text-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="method" value="manual" id="method_manual" checked>
+                                    <label class="form-check-label w-100" for="method_manual">
+                                        <i class="fas fa-edit fa-3x text-primary mb-3 d-block"></i>
+                                        <h5>Manual Entry</h5>
+                                        <p class="method-description">
+                                            Manually enter opening balances for each account individually.
+                                            Best for setting up initial balances or making specific adjustments.
+                                        </p>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card method-card h-100" data-method="calculate">
+                            <div class="card-body text-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="method" value="calculate" id="method_calculate">
+                                    <label class="form-check-label w-100" for="method_calculate">
+                                        <i class="fas fa-calculator fa-3x text-success mb-3 d-block"></i>
+                                        <h5>Calculate from Transactions</h5>
+                                        <p class="method-description">
+                                            Calculate opening balances based on existing transactions up to a cutoff date.
+                                            Useful when migrating from another system.
+                                        </p>
+                                    </label>
+                                </div>
+                                <div class="calculate-fields" style="display: none;">
+                                    <div class="mt-3">
+                                        <label for="{{ form.cutoff_date.id_for_label }}" class="form-label">Cutoff Date</label>
+                                        {{ form.cutoff_date }}
+                                        <div class="form-text">{{ form.cutoff_date.help_text }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card method-card h-100" data-method="import">
+                            <div class="card-body text-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="method" value="import" id="method_import">
+                                    <label class="form-check-label w-100" for="method_import">
+                                        <i class="fas fa-file-import fa-3x text-info mb-3 d-block"></i>
+                                        <h5>Import from CSV</h5>
+                                        <p class="method-description">
+                                            Import opening balances from a CSV file with account codes and amounts.
+                                            Efficient for bulk updates from external sources.
+                                        </p>
+                                    </label>
+                                </div>
+                                <div class="import-fields" style="display: none;">
+                                    <div class="mt-3">
+                                        <label for="{{ form.csv_file.id_for_label }}" class="form-label">CSV File</label>
+                                        {{ form.csv_file }}
+                                        <div class="form-text">{{ form.csv_file.help_text }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card method-card h-100" data-method="zero">
+                            <div class="card-body text-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="method" value="zero" id="method_zero">
+                                    <label class="form-check-label w-100" for="method_zero">
+                                        <i class="fas fa-eraser fa-3x text-warning mb-3 d-block"></i>
+                                        <h5>Reset to Zero</h5>
+                                        <p class="method-description">
+                                            Set all opening balances to zero. Useful for starting fresh or
+                                            clearing incorrect opening balance data.
+                                        </p>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="row mt-4">
+                    <div class="col-12 text-center">
+                        <button type="button" class="btn btn-outline-secondary me-2" id="preview-btn">
+                            <i class="fas fa-eye me-1"></i>Preview Changes
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Apply Changes
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Current Opening Balances Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-table me-2"></i>
+                Current Opening Balances
+            </h5>
+            <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-outline-primary" onclick="toggleZeroBalances()">
+                    <i class="fas fa-eye-slash me-1"></i>Hide Zero Balances
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover account-table" id="accounts-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Account Name</th>
+                            <th>Type</th>
+                            <th class="text-end">Opening Balance</th>
+                            <th class="text-center">Balance Date</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for account in accounts %}
+                        <tr class="account-row" data-balance="{{ account.opening_balance }}">
+                            <td><code class="text-primary">{{ account.code }}</code></td>
+                            <td>
+                                <strong>{{ account.name }}</strong>
+                                {% if account.description %}
+                                <br><small class="text-muted">{{ account.description|truncatechars:50 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if account.account_type == 'asset' %}success{% elif account.account_type == 'liability' %}warning{% elif account.account_type == 'equity' %}info{% elif account.account_type == 'income' %}primary{% else %}secondary{% endif %}">
+                                    {{ account.get_account_type_display }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <strong class="{% if account.opening_balance > 0 %}balance-positive{% elif account.opening_balance < 0 %}balance-negative{% else %}balance-zero{% endif %}">
+                                    {{ currency_symbol }}{{ account.opening_balance|floatformat:2 }}
+                                </strong>
+                            </td>
+                            <td class="text-center">
+                                {% if account.opening_balance_date %}
+                                    <span class="badge bg-light text-dark">{{ account.opening_balance_date|date:"M d, Y" }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <a href="{% url 'accounts:single_account_opening_balance' account.pk %}" 
+                                   class="btn btn-sm btn-outline-primary" title="Edit Opening Balance">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'accounts:account_detail' account.pk %}" 
+                                   class="btn btn-sm btn-outline-info" title="View Account Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>Preview Changes
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="preview-content">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="applyPreviewedChanges()">
+                    Apply These Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Method selection handling
+        $('input[name="method"]').change(function() {
+            const method = $(this).val();
+            
+            // Hide all method-specific fields
+            $('.calculate-fields, .import-fields').hide();
+            
+            // Show relevant fields
+            if (method === 'calculate') {
+                $('.calculate-fields').show();
+            } else if (method === 'import') {
+                $('.import-fields').show();
+            }
+            
+            // Update card styling
+            $('.method-card').removeClass('border-primary');
+            $(this).closest('.method-card').addClass('border-primary');
+        });
+        
+        // Preview functionality
+        $('#preview-btn').click(function() {
+            const method = $('input[name="method"]:checked').val();
+            
+            if (method === 'calculate') {
+                previewCalculate();
+            } else {
+                alert('Preview is only available for calculate method.');
+            }
+        });
+        
+        // Table filtering
+        $('#accounts-table').DataTable({
+            pageLength: 25,
+            order: [[0, 'asc']],
+            columnDefs: [
+                { orderable: false, targets: 5 }
+            ]
+        });
+    });
+    
+    function previewCalculate() {
+        const cutoffDate = $('[name="cutoff_date"]').val();
+        
+        if (!cutoffDate) {
+            alert('Please select a cutoff date for the calculation.');
+            return;
+        }
+        
+        $.ajax({
+            url: '{% url "accounts:opening_balance_preview" %}',
+            method: 'POST',
+            data: {
+                'method': 'calculate',
+                'cutoff_date': cutoffDate,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(data) {
+                if (data.success) {
+                    displayPreview(data.preview_data);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            },
+            error: function() {
+                alert('Error loading preview.');
+            }
+        });
+    }
+    
+    function displayPreview(previewData) {
+        let html = '';
+        
+        if (previewData.length === 0) {
+            html = '<div class="alert alert-info">No changes would be made to any accounts.</div>';
+        } else {
+            html = `
+                <div class="alert alert-info">
+                    <strong>${previewData.length}</strong> accounts would be updated:
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Account Name</th>
+                                <th class="text-end">Current</th>
+                                <th class="text-end">Calculated</th>
+                                <th class="text-end">Difference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            previewData.forEach(function(account) {
+                const difference = parseFloat(account.difference);
+                const diffClass = difference > 0 ? 'text-success' : difference < 0 ? 'text-danger' : 'text-muted';
+                
+                html += `
+                    <tr>
+                        <td><code>${account.code}</code></td>
+                        <td>${account.name}</td>
+                        <td class="text-end">{{ currency_symbol }}${account.current_balance}</td>
+                        <td class="text-end">{{ currency_symbol }}${account.calculated_balance}</td>
+                        <td class="text-end ${diffClass}">{{ currency_symbol }}${account.difference}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table></div>';
+        }
+        
+        $('#preview-content').html(html);
+        $('#previewModal').modal('show');
+    }
+    
+    function toggleZeroBalances() {
+        const btn = event.target.closest('button');
+        const rows = document.querySelectorAll('.account-row');
+        const isHiding = btn.textContent.includes('Hide');
+        
+        rows.forEach(row => {
+            const balance = parseFloat(row.dataset.balance);
+            if (balance === 0) {
+                row.style.display = isHiding ? 'none' : '';
+            }
+        });
+        
+        btn.innerHTML = isHiding ? 
+            '<i class="fas fa-eye me-1"></i>Show Zero Balances' : 
+            '<i class="fas fa-eye-slash me-1"></i>Hide Zero Balances';
+    }
+    
+    function applyPreviewedChanges() {
+        $('#previewModal').modal('hide');
+        $('#opening-balance-form').submit();
+    }
+</script>
+{% endblock %}

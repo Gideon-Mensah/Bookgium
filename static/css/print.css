@@ -1,0 +1,225 @@
+/* Print styles for reports */
+@media print {
+    /* Hide unnecessary elements */
+    .navbar,
+    .sidebar,
+    nav.sidebar,
+    .col-md-3.col-lg-2.d-md-block.sidebar,
+    .offcanvas,
+    .offcanvas-backdrop,
+    .nav,
+    .nav-link,
+    .navbar-nav,
+    .navbar-brand,
+    .navbar-toggler,
+    .btn,
+    .btn-group,
+    .card-header .btn,
+    .pagination,
+    .alert,
+    .modal,
+    .dropdown-menu,
+    .dropdown,
+    .breadcrumb,
+    .footer,
+    .d-print-none,
+    .screen-only,
+    #sidebar,
+    .main-sidebar,
+    .sidebar-wrapper,
+    .navbar-header,
+    .main-header {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Show only the report content */
+    body {
+        background: white !important;
+        color: black !important;
+        font-size: 12pt;
+        line-height: 1.4;
+    }
+    
+    /* Remove shadows and borders for clean printing */
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+    
+    .card-body {
+        padding: 0 !important;
+    }
+    
+    /* Table styling for print */
+    table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+        margin-bottom: 20px !important;
+    }
+    
+    table, th, td {
+        border: 1px solid #000 !important;
+        page-break-inside: avoid;
+    }
+    
+    th {
+        background-color: #f8f9fa !important;
+        font-weight: bold !important;
+        text-align: center !important;
+    }
+    
+    /* Report header styling */
+    .report-header {
+        text-align: center;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
+    }
+    
+    .report-header h1,
+    .report-header h2,
+    .report-header h3 {
+        margin: 0;
+        color: black !important;
+    }
+    
+    .report-header .company-name {
+        font-size: 18pt;
+        font-weight: bold;
+    }
+    
+    .report-header .report-title {
+        font-size: 16pt;
+        font-weight: bold;
+        margin-top: 5px;
+    }
+    
+    .report-header .report-period {
+        font-size: 12pt;
+        margin-top: 5px;
+    }
+    
+    /* Currency and number formatting */
+    .text-end {
+        text-align: right !important;
+    }
+    
+    .text-center {
+        text-align: center !important;
+    }
+    
+    /* Page break controls */
+    .page-break-before {
+        page-break-before: always;
+    }
+    
+    .page-break-after {
+        page-break-after: always;
+    }
+    
+    .no-page-break {
+        page-break-inside: avoid;
+    }
+    
+    /* Total rows styling */
+    .total-row {
+        border-top: 2px solid #000 !important;
+        font-weight: bold !important;
+    }
+    
+    /* Signature lines */
+    .signature-section {
+        margin-top: 50px;
+        page-break-inside: avoid;
+    }
+    
+    .signature-line {
+        border-bottom: 1px solid #000;
+        width: 200px;
+        margin: 30px 0 5px 0;
+        display: inline-block;
+    }
+    
+    /* Print-specific spacing */
+    .print-spacer {
+        height: 20px;
+    }
+    
+    /* Main content layout adjustments for print */
+    .main-content,
+    main.main-content,
+    main.col-md-9.ms-sm-auto.col-lg-10.px-md-4.main-content {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 20px !important;
+        position: static !important;
+        flex: none !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
+    /* Ensure body and html take full width */
+    html, body {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Container adjustments */
+    .container,
+    .container-fluid {
+        width: 100% !important;
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    .row {
+        margin: 0 !important;
+        display: block !important;
+    }
+    
+    .col,
+    .col-1, .col-2, .col-3, .col-4, .col-5, .col-6,
+    .col-7, .col-8, .col-9, .col-10, .col-11, .col-12,
+    .col-auto, .col-sm, .col-md, .col-lg, .col-xl,
+    .col-md-9, .col-lg-10, .ms-sm-auto {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        flex: none !important;
+    }
+    
+    /* Hide top navbar/header */
+    .d-flex.justify-content-between.flex-wrap.flex-md-nowrap.align-items-center.pt-3.pb-2.mb-3.border-bottom,
+    .btn-toolbar,
+    .dropdown {
+        display: none !important;
+    }
+}
+
+/* Print button visible only on screen */
+@media screen {
+    .print-only {
+        display: none;
+    }
+}
+
+@media print {
+    .screen-only {
+        display: none !important;
+    }
+    
+    .print-only {
+        display: block;
+    }
+}

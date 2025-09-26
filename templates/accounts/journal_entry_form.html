@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}New Journal Entry - Bookgium{% endblock %}
+{% block page_title %}New Journal Entry{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-book me-2"></i>
+                    Create Journal Entry
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Journal Entry Header -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <label for="{{ form.reference.id_for_label }}" class="form-label">Reference</label>
+                            <input type="text" name="{{ form.reference.name }}" class="form-control" value="{{ form.reference.value|default:'' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.date.id_for_label }}" class="form-label">Date</label>
+                            <input type="date" name="{{ form.date.name }}" class="form-control" value="{{ form.date.value|date:'Y-m-d'|default:'' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            <input type="text" name="{{ form.description.name }}" class="form-control" value="{{ form.description.value|default:'' }}" required>
+                        </div>
+                    </div>
+
+                    {% if form.notes %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                            <textarea name="{{ form.notes.name }}" class="form-control" rows="2">{{ form.notes.value|default:'' }}</textarea>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Journal Entry Lines -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Journal Entry Lines</h6>
+                        <button type="button" id="add-line-btn" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>
+                            Add Line
+                        </button>
+                    </div>
+                    
+                    <!-- Management form fields -->
+                    <input type="hidden" name="{{ formset.management_form.TOTAL_FORMS.name }}" value="{{ formset.management_form.TOTAL_FORMS.value }}" id="id_{{ formset.management_form.TOTAL_FORMS.name }}">
+                    <input type="hidden" name="{{ formset.management_form.INITIAL_FORMS.name }}" value="{{ formset.management_form.INITIAL_FORMS.value }}">
+                    <input type="hidden" name="{{ formset.management_form.MIN_NUM_FORMS.name }}" value="{{ formset.management_form.MIN_NUM_FORMS.value }}">
+                    <input type="hidden" name="{{ formset.management_form.MAX_NUM_FORMS.name }}" value="{{ formset.management_form.MAX_NUM_FORMS.value }}">
+                    
+                    <div id="formset-container">
+                        {% for form_line in formset %}
+                        <div class="card mb-3 formset-form" data-form-index="{{ forloop.counter0 }}">
+                            <div class="card-body">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Account</label>
+                                        <select name="{{ form_line.account.name }}" class="form-select" required>
+                                            <option value="">Select Account</option>
+                                            {% for choice in form_line.account.field.queryset %}
+                                            <option value="{{ choice.pk }}" {% if form_line.account.value == choice.pk %}selected{% endif %}>
+                                                {{ choice.code }} - {{ choice.name }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Type</label>
+                                        <select name="{{ form_line.entry_type.name }}" class="form-select" required>
+                                            <option value="">Select Type</option>
+                                            <option value="debit" {% if form_line.entry_type.value == "debit" %}selected{% endif %}>Debit</option>
+                                            <option value="credit" {% if form_line.entry_type.value == "credit" %}selected{% endif %}>Credit</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Amount</label>
+                                        <input type="number" name="{{ form_line.amount.name }}" class="form-control" step="0.01" min="0" value="{{ form_line.amount.value|default:'' }}" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Description</label>
+                                        <input type="text" name="{{ form_line.description.name }}" class="form-control" value="{{ form_line.description.value|default:'' }}">
+                                    </div>
+                                    <div class="col-md-1 d-grid">
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-line-btn" title="Remove Line">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% if form_line.id %}
+                                <input type="hidden" name="{{ form_line.id.name }}" value="{{ form_line.id.value }}">
+                                {% endif %}
+                                {% if form_line.DELETE %}
+                                <input type="hidden" name="{{ form_line.DELETE.name }}" class="delete-checkbox" value="">
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'accounts:journal_entry_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Back to List
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>
+                            Save Journal Entry
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addLineBtn = document.getElementById('add-line-btn');
+    const formsetContainer = document.getElementById('formset-container');
+    const totalFormsInput = document.getElementById('id_{{ formset.management_form.TOTAL_FORMS.name }}');
+    const maxForms = parseInt(document.querySelector('input[name="{{ formset.management_form.MAX_NUM_FORMS.name }}"]').value);
+    
+    // Account options for new forms
+    const accountOptions = `
+        <option value="">Select Account</option>
+        {% for account in formset.0.account.field.queryset %}
+        <option value="{{ account.pk }}">{{ account.code }} - {{ account.name }}</option>
+        {% endfor %}
+    `;
+    
+    // Add new line functionality
+    addLineBtn.addEventListener('click', function() {
+        const currentTotalForms = parseInt(totalFormsInput.value);
+        
+        if (currentTotalForms >= maxForms) {
+            alert('Maximum number of lines reached.');
+            return;
+        }
+        
+        const newFormIndex = currentTotalForms;
+        const prefix = '{{ formset.prefix }}';
+        const newFormHtml = `
+            <div class="card mb-3 formset-form" data-form-index="${newFormIndex}">
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label">Account</label>
+                            <select name="${prefix}-${newFormIndex}-account" class="form-select" required>
+                                ${accountOptions}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Type</label>
+                            <select name="${prefix}-${newFormIndex}-entry_type" class="form-select" required>
+                                <option value="">Select Type</option>
+                                <option value="debit">Debit</option>
+                                <option value="credit">Credit</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Amount</label>
+                            <input type="number" name="${prefix}-${newFormIndex}-amount" class="form-control" step="0.01" min="0" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Description</label>
+                            <input type="text" name="${prefix}-${newFormIndex}-description" class="form-control">
+                        </div>
+                        <div class="col-md-1 d-grid">
+                            <button type="button" class="btn btn-outline-danger btn-sm remove-line-btn" title="Remove Line">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <input type="hidden" name="${prefix}-${newFormIndex}-id" value="">
+                    <input type="hidden" name="${prefix}-${newFormIndex}-DELETE" class="delete-checkbox" value="">
+                </div>
+            </div>
+        `;
+        
+        formsetContainer.insertAdjacentHTML('beforeend', newFormHtml);
+        totalFormsInput.value = currentTotalForms + 1;
+        
+        // Add event listener to the new remove button
+        const newForm = formsetContainer.lastElementChild;
+        const removeBtn = newForm.querySelector('.remove-line-btn');
+        removeBtn.addEventListener('click', function() {
+            removeFormLine(newForm);
+        });
+    });
+    
+    // Remove line functionality
+    function removeFormLine(formElement) {
+        const deleteCheckbox = formElement.querySelector('.delete-checkbox');
+        if (deleteCheckbox) {
+            deleteCheckbox.value = 'on';
+            formElement.style.display = 'none';
+        } else {
+            formElement.remove();
+            updateFormIndices();
+        }
+    }
+    
+    // Update form indices after removal
+    function updateFormIndices() {
+        const forms = document.querySelectorAll('.formset-form:not([style*="display: none"])');
+        const prefix = '{{ formset.prefix }}';
+        let index = 0;
+        
+        forms.forEach(form => {
+            if (form.style.display !== 'none') {
+                form.setAttribute('data-form-index', index);
+                
+                const inputs = form.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    const name = input.getAttribute('name');
+                    if (name && name.startsWith(prefix + '-')) {
+                        const parts = name.split('-');
+                        if (parts.length >= 3 && !isNaN(parts[1])) {
+                            parts[1] = index;
+                            input.setAttribute('name', parts.join('-'));
+                        }
+                    }
+                });
+                index++;
+            }
+        });
+        
+        totalFormsInput.value = index;
+    }
+    
+    // Add event listeners to existing remove buttons
+    document.querySelectorAll('.remove-line-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const formElement = this.closest('.formset-form');
+            removeFormLine(formElement);
+        });
+    });
+});
+</script>
+
+{% endblock %}

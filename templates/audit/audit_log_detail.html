@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Audit Log Detail - Bookgium{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-eye me-2"></i>Audit Log Detail</h2>
+                <div>
+                    <a href="{% url 'audit:log_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Logs
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>
+                                {% if log.action == 'create' %}
+                                    <span class="badge bg-success me-2">CREATE</span>
+                                {% elif log.action == 'update' %}
+                                    <span class="badge bg-warning me-2">UPDATE</span>
+                                {% elif log.action == 'delete' %}
+                                    <span class="badge bg-danger me-2">DELETE</span>
+                                {% elif log.action == 'login' %}
+                                    <span class="badge bg-info me-2">LOGIN</span>
+                                {% elif log.action == 'logout' %}
+                                    <span class="badge bg-secondary me-2">LOGOUT</span>
+                                {% elif log.action == 'post_journal' %}
+                                    <span class="badge bg-primary me-2">POST</span>
+                                {% elif log.action == 'unpost_journal' %}
+                                    <span class="badge bg-dark me-2">UNPOST</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark me-2">{{ log.action|upper }}</span>
+                                {% endif %}
+                                {{ log.object_repr }}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Basic Information</h6>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td><strong>Timestamp:</strong></td>
+                                            <td>{{ log.timestamp|date:"F d, Y g:i:s A" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>User:</strong></td>
+                                            <td>
+                                                {% if log.user %}
+                                                    {{ log.user.get_full_name|default:log.user.username }}
+                                                {% else %}
+                                                    <em class="text-muted">System</em>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Action:</strong></td>
+                                            <td>{{ log.get_action_display }}</td>
+                                        </tr>
+                                        {% if log.content_type %}
+                                        <tr>
+                                            <td><strong>Model:</strong></td>
+                                            <td>{{ log.content_type.name|title }}</td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if log.object_id %}
+                                        <tr>
+                                            <td><strong>Object ID:</strong></td>
+                                            <td>{{ log.object_id }}</td>
+                                        </tr>
+                                        {% endif %}
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Technical Details</h6>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td><strong>IP Address:</strong></td>
+                                            <td>{{ log.ip_address|default:"N/A" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Session Key:</strong></td>
+                                            <td>
+                                                {% if log.session_key %}
+                                                    <code>{{ log.session_key|truncatechars:20 }}</code>
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>User Agent:</strong></td>
+                                            <td>
+                                                {% if log.user_agent %}
+                                                    <small>{{ log.user_agent|truncatechars:50 }}</small>
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {% if log.notes %}
+                            <div class="mt-3">
+                                <h6>Notes</h6>
+                                <div class="alert alert-light">
+                                    {{ log.notes }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    {% if log.changes %}
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-edit me-2"></i>Changes Made</h6>
+                        </div>
+                        <div class="card-body">
+                            {% for field, change in log.changes.items %}
+                            <div class="mb-3">
+                                <strong>{{ field|title }}:</strong>
+                                {% if change.old != change.new %}
+                                <div class="mt-1">
+                                    <div class="text-danger">
+                                        <small><strong>Old:</strong> {{ change.old|default:"<empty>" }}</small>
+                                    </div>
+                                    <div class="text-success">
+                                        <small><strong>New:</strong> {{ change.new|default:"<empty>" }}</small>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="text-muted">
+                                    <small>{{ change }}</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if log.user %}
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6><i class="fas fa-user me-2"></i>User Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Username:</strong></td>
+                                    <td>{{ log.user.username }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Full Name:</strong></td>
+                                    <td>{{ log.user.get_full_name|default:"N/A" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Email:</strong></td>
+                                    <td>{{ log.user.email|default:"N/A" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Role:</strong></td>
+                                    <td>{{ log.user.role|title|default:"N/A" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Staff:</strong></td>
+                                    <td>
+                                        {% if log.user.is_staff %}
+                                            <span class="badge bg-success">Yes</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">No</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

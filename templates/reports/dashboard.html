@@ -1,0 +1,405 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reports Dashboard - Bookgium{% endblock %}
+
+{% block page_title %}Reports Dashboard{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Reports Overview</h2>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#quickReportModal">
+                    <i class="fas fa-bolt me-1"></i>Quick Report
+                </button>
+                <a href="{% url 'reports:template_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>New Template
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Invoices
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ quick_stats.total_invoices }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-file-invoice fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Revenue
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ currency_symbol }}{{ quick_stats.total_revenue|floatformat:2 }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Monthly Revenue
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ currency_symbol }}{{ quick_stats.monthly_revenue|floatformat:2 }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col me-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Overdue Invoices
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ quick_stats.overdue_invoices }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Categories -->
+<div class="row">
+    <!-- Financial Reports -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-chart-line me-2"></i>Financial Reports
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'reports:trial_balance' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Trial Balance</h6>
+                            <small><i class="fas fa-balance-scale"></i></small>
+                        </div>
+                        <p class="mb-1">View account balances for a specific period</p>
+                    </a>
+                    <a href="{% url 'reports:income_statement' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Income Statement</h6>
+                            <small><i class="fas fa-chart-area"></i></small>
+                        </div>
+                        <p class="mb-1">Profit and loss statement</p>
+                    </a>
+                    <a href="{% url 'reports:balance_sheet' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Balance Sheet</h6>
+                            <small><i class="fas fa-file-contract"></i></small>
+                        </div>
+                        <p class="mb-1">Assets, liabilities, and equity snapshot</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Reports -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-file-invoice me-2"></i>Invoice Reports
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'reports:invoice_summary' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Invoice Summary</h6>
+                            <small><i class="fas fa-list"></i></small>
+                        </div>
+                        <p class="mb-1">Summary of invoices by status and customer</p>
+                    </a>
+                    <a href="{% url 'reports:aged_receivables' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Aged Receivables</h6>
+                            <small><i class="fas fa-clock"></i></small>
+                        </div>
+                        <p class="mb-1">Outstanding invoices by age</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-chart-pie me-2"></i>Analytics
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'reports:revenue_analytics' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Revenue Analytics</h6>
+                            <small><i class="fas fa-chart-bar"></i></small>
+                        </div>
+                        <p class="mb-1">Revenue trends and customer analysis</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Reports & Templates -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Reports</h6>
+            </div>
+            <div class="card-body">
+                {% if recent_reports %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Report</th>
+                                    <th>Generated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in recent_reports %}
+                                <tr>
+                                    <td>{{ report.template.name }}</td>
+                                    <td>{{ report.generated_at|date:"M d, Y H:i" }}</td>
+                                    <td>
+                                        {% if report.file_path %}
+                                        <a href="{{ report.file_path.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No recent reports generated.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Report Templates</h6>
+                <a href="{% url 'reports:template_list' %}" class="btn btn-sm btn-outline-primary">
+                    View All
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <span>Total Templates</span>
+                    <span class="badge bg-primary">{{ total_templates }}</span>
+                </div>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <span>Scheduled Reports</span>
+                    <span class="badge bg-success">{{ scheduled_reports }}</span>
+                </div>
+                <div class="d-grid">
+                    <a href="{% url 'reports:template_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Create New Template
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Report Modal -->
+<div class="modal fade" id="quickReportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quick Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickReportForm">
+                    <div class="mb-3">
+                        <label for="reportType" class="form-label">Report Type</label>
+                        <select class="form-select" id="reportType" name="report_type" required>
+                            <option value="">Select a report type</option>
+                            <option value="trial_balance">Trial Balance</option>
+                            <option value="income_statement">Income Statement</option>
+                            <option value="balance_sheet">Balance Sheet</option>
+                            <option value="invoice_summary">Invoice Summary</option>
+                            <option value="aged_receivables">Aged Receivables</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="dateFrom" class="form-label">From Date</label>
+                                <input type="date" class="form-control" id="dateFrom" name="date_from">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="dateTo" class="form-label">To Date</label>
+                                <input type="date" class="form-control" id="dateTo" name="date_to">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="generateQuickReport()">Generate Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set default dates for quick report
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    document.getElementById('dateFrom').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('dateTo').value = today.toISOString().split('T')[0];
+});
+
+function generateQuickReport() {
+    const form = document.getElementById('quickReportForm');
+    const formData = new FormData(form);
+    const reportType = formData.get('report_type');
+    const dateFrom = formData.get('date_from');
+    const dateTo = formData.get('date_to');
+    
+    if (!reportType) {
+        alert('Please select a report type');
+        return;
+    }
+    
+    let url = '';
+    const params = new URLSearchParams();
+    
+    if (dateFrom) params.append('date_from', dateFrom);
+    if (dateTo) params.append('date_to', dateTo);
+    
+    switch(reportType) {
+        case 'trial_balance':
+            url = "{% url 'reports:trial_balance' %}";
+            break;
+        case 'income_statement':
+            url = "{% url 'reports:income_statement' %}";
+            break;
+        case 'balance_sheet':
+            url = "{% url 'reports:balance_sheet' %}";
+            if (dateTo) {
+                params.delete('date_from');
+                params.set('as_of_date', dateTo);
+            }
+            break;
+        case 'invoice_summary':
+            url = "{% url 'reports:invoice_summary' %}";
+            break;
+        case 'aged_receivables':
+            url = "{% url 'reports:aged_receivables' %}";
+            if (dateTo) {
+                params.delete('date_from');
+                params.set('as_of_date', dateTo);
+            }
+            break;
+    }
+    
+    if (params.toString()) {
+        url += '?' + params.toString();
+    }
+    
+    window.open(url, '_blank');
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('quickReportModal'));
+    modal.hide();
+}
+</script>
+
+<style>
+    .border-left-primary {
+        border-left: 0.25rem solid #4e73df !important;
+    }
+    .border-left-success {
+        border-left: 0.25rem solid #1cc88a !important;
+    }
+    .border-left-info {
+        border-left: 0.25rem solid #36b9cc !important;
+    }
+    .border-left-warning {
+        border-left: 0.25rem solid #f6c23e !important;
+    }
+    .text-xs {
+        font-size: 0.7rem;
+    }
+    .text-gray-800 {
+        color: #5a5c69 !important;
+    }
+    .text-gray-300 {
+        color: #dddfeb !important;
+    }
+</style>
+{% endblock %}
