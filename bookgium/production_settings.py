@@ -46,9 +46,6 @@ DATABASE_ROUTERS = (
 
 # Enable connection pooling (recommended for production)
 DATABASES['default']['CONN_MAX_AGE'] = 600
-DATABASES['default']['OPTIONS'] = {
-    'MAX_CONNS': 20
-}
 
 # STATIC FILES CONFIGURATION
 STATIC_URL = '/static/'
