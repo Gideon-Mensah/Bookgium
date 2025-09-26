@@ -1,54 +1,54 @@
-#!/usr/bin/env python
-"""
-Render deployment build script for Bookgium Django multi-tenant application.
-This script is automatically executed by Render during deployment.
-"""
+#!/usr/bin/env bash
+# Render deployment build script for Bookgium Django multi-tenant application
+# This script is automatically executed by Render during deployment
+
+set -o errexit  # exit on error
+
+echo "=== Starting Render build process for Multi-Tenant Bookgium ==="
+
+echo "1. Installing Python dependencies..."
+pip install -r requirements.txt
+
+echo "2. Collecting static files..."
+python manage.py collectstatic --noinput
+
+echo "3. Running shared schema migrations (creates django-tenants tables)..."
+python manage.py migrate_schemas --shared
+
+echo "4. Creating default tenant if it doesn't exist..."
+python -c "
 import os
-import subprocess
-import sys
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bookgium.settings')
+import django
+django.setup()
+from clients.models import Client, Domain
 
-def run_command(command):
-    """Execute a command and handle errors."""
-    print(f"Running: {command}")
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"Error running command: {command}")
-        print(f"Error output: {result.stderr}")
-        sys.exit(1)
-    return result.stdout
+# Check if default tenant exists
+try:
+    client = Client.objects.get(schema_name='public')
+    print('Default tenant already exists')
+except Client.DoesNotExist:
+    print('Creating default tenant...')
+    # Create default tenant
+    client = Client.objects.create(
+        schema_name='bookgium',
+        name='Bookgium Default',
+        description='Default tenant for Bookgium'
+    )
+    
+    # Create domain for the tenant
+    domain = Domain.objects.create(
+        domain='bookgium.onrender.com',
+        tenant=client,
+        is_primary=True
+    )
+    print(f'Created tenant: {client.name} with domain: {domain.domain}')
+"
 
-def main():
-    """Main build process for Render deployment."""
-    print("=== Starting Render build process for Multi-Tenant Bookgium ===")
-    
-    # Install Python dependencies
-    print("\n1. Installing Python dependencies...")
-    run_command("pip install -r requirements.txt")
-    
-    # Collect static files
-    print("\n2. Collecting static files...")
-    run_command("python manage.py collectstatic --noinput")
-    
-    # Run database migrations for shared apps (creates public schema)
-    print("\n3. Running shared schema migrations...")
-    run_command("python manage.py migrate_schemas --shared")
-    
-    # Run database migrations for all schemas
-    print("\n4. Running tenant schema migrations...")
-    run_command("python manage.py migrate_schemas")
-    
-    # Initialize audit settings (if needed)
-    print("\n5. Initializing audit settings...")
-    try:
-        run_command("python manage.py init_audit_settings")
-    except:
-        print("Audit settings initialization skipped (may already exist)")
-    
-    print("\n6. Multi-tenant build process completed successfully!")
-    print("=== Render build process finished ===")
-    print("\nNext steps:")
-    print("1. Create your first tenant: python manage.py create_tenant 'Client Name' domain.com")
-    print("2. Create admin user: python manage.py create_tenant_superuser schema_name")
+echo "5. Running all schema migrations..."
+python manage.py migrate_schemas
 
-if __name__ == "__main__":
-    main()
+echo "=== Build process completed successfully! ==="
+echo ""
+echo "Your multi-tenant application is ready!"
+echo "Visit https://bookgium.onrender.com to access the application"
