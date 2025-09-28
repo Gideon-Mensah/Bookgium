@@ -84,7 +84,7 @@
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
-                               href="{% url 'dashboard' %}">
+                               href="{% url 'users:dashboard' %}">
                                 <i class="fas fa-tachometer-alt me-2"></i>
                                 Dashboard
                             </a>
@@ -93,7 +93,7 @@
                         {% if user.role == 'admin' or user.is_superuser %}
                         <li class="nav-item">
                             <a class="nav-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}" 
-                               href="{% url 'user_list' %}">
+                               href="{% url 'users:user_list' %}">
                                 <i class="fas fa-users me-2"></i>
                                 Users
                             </a>
@@ -183,13 +183,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'profile' %}">
+                            <a class="nav-link" href="{% url 'users:profile' %}">
                                 <i class="fas fa-user me-2"></i>
                                 Profile
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'logout' %}">
+                            <a class="nav-link" href="{% url 'users:logout' %}">
                                 <i class="fas fa-sign-out-alt me-2"></i>
                                 Logout
                             </a>
@@ -245,10 +245,10 @@
                                 <span class="badge bg-primary ms-1">{{ user.get_role_display }}</span>
                             </button>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-user me-2"></i>Profile</a></li>
-                                <li><a class="dropdown-item" href="{% url 'password_change' %}"><i class="fas fa-key me-2"></i>Change Password</a></li>
+                                <li><a class="dropdown-item" href="{% url 'users:profile' %}"><i class="fas fa-user me-2"></i>Profile</a></li>
+                                <li><a class="dropdown-item" href="{% url 'users:password_change' %}"><i class="fas fa-key me-2"></i>Change Password</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                                <li><a class="dropdown-item" href="{% url 'users:logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                             </ul>
                         </div>
                     </div>

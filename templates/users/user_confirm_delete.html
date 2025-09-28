@@ -59,7 +59,7 @@
                 <form method="post" class="mt-4">
                     {% csrf_token %}
                     <div class="d-flex justify-content-between">
-                        <a href="{% url 'user_detail' user_obj.pk %}" class="btn btn-secondary">
+                        <a href="{% url 'users:user_detail' user_obj.pk %}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left me-2"></i>
                             Cancel
                         </a>
@@ -77,9 +77,9 @@
 <!-- Breadcrumb -->
 <nav aria-label="breadcrumb" class="mt-4">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'user_list' %}">Users</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'user_detail' user_obj.pk %}">{{ user_obj.get_full_name|default:user_obj.username }}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'users:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'users:user_list' %}">Users</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'users:user_detail' user_obj.pk %}">{{ user_obj.get_full_name|default:user_obj.username }}</a></li>
         <li class="breadcrumb-item active">Delete</li>
     </ol>
 </nav>

@@ -150,7 +150,7 @@
                     {% endif %}
                     
                     <div class="d-flex justify-content-between mt-4">
-                        <a href="{% if user_obj %}{% url 'user_detail' user_obj.pk %}{% else %}{% url 'user_list' %}{% endif %}" 
+                        <a href="{% if user_obj %}{% url 'users:user_detail' user_obj.pk %}{% else %}{% url 'users:user_list' %}{% endif %}" 
                            class="btn btn-secondary">
                             <i class="fas fa-arrow-left me-2"></i>
                             Cancel

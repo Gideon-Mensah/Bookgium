@@ -135,7 +135,7 @@
                         </table>
                     </div>
                     <div class="text-center">
-                        <a href="{% url 'user_list' %}" class="btn btn-outline-primary">
+                        <a href="{% url 'users:user_list' %}" class="btn btn-outline-primary">
                             <i class="fas fa-users me-2"></i>
                             View All Users
                         </a>
@@ -201,11 +201,11 @@
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <a href="{% url 'user_create' %}" class="btn btn-primary">
+                    <a href="{% url 'users:user_create' %}" class="btn btn-primary">
                         <i class="fas fa-user-plus me-2"></i>
                         Add New User
                     </a>
-                    <a href="{% url 'user_list' %}" class="btn btn-outline-primary">
+                    <a href="{% url 'users:user_list' %}" class="btn btn-outline-primary">
                         <i class="fas fa-users me-2"></i>
                         Manage Users
                     </a>

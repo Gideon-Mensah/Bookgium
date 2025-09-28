@@ -13,7 +13,7 @@
             All Users
         </h6>
         {% if user.role == 'admin' or user.is_superuser %}
-        <a href="{% url 'user_create' %}" class="btn btn-primary">
+        <a href="{% url 'users:user_create' %}" class="btn btn-primary">
             <i class="fas fa-user-plus me-2"></i>
             Add New User
         </a>
@@ -87,7 +87,7 @@
                                 </div>
                                 <div>
                                     <div class="fw-bold">
-                                        <a href="{% url 'user_detail' user_obj.pk %}" class="text-decoration-none">
+                                        <a href="{% url 'users:user_detail' user_obj.pk %}" class="text-decoration-none">
                                             {{ user_obj.get_full_name|default:user_obj.username }}
                                         </a>
                                     </div>
@@ -119,14 +119,14 @@
                         </td>
                         <td class="text-center">
                             <div class="btn-group" role="group">
-                                <a href="{% url 'user_detail' user_obj.pk %}" 
+                                <a href="{% url 'users:user_detail' user_obj.pk %}" 
                                    class="btn btn-sm btn-outline-primary" 
                                    title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 
                                 {% if user.role == 'admin' or user.is_superuser or user == user_obj %}
-                                <a href="{% url 'user_edit' user_obj.pk %}" 
+                                <a href="{% url 'users:user_edit' user_obj.pk %}" 
                                    class="btn btn-sm btn-outline-warning" 
                                    title="Edit User">
                                     <i class="fas fa-edit"></i>
@@ -135,14 +135,14 @@
                                 
                                 {% if user.role == 'admin' or user.is_superuser %}
                                     {% if user_obj != user %}
-                                    <a href="{% url 'toggle_user_status' user_obj.pk %}" 
+                                    <a href="{% url 'users:toggle_user_status' user_obj.pk %}" 
                                        class="btn btn-sm btn-outline-{% if user_obj.is_active %}danger{% else %}success{% endif %}" 
                                        title="{% if user_obj.is_active %}Deactivate{% else %}Activate{% endif %} User"
                                        onclick="return confirm('Are you sure you want to {% if user_obj.is_active %}deactivate{% else %}activate{% endif %} this user?')">
                                         <i class="fas fa-{% if user_obj.is_active %}user-slash{% else %}user-check{% endif %}"></i>
                                     </a>
                                     
-                                    <a href="{% url 'user_delete' user_obj.pk %}" 
+                                    <a href="{% url 'users:user_delete' user_obj.pk %}" 
                                        class="btn btn-sm btn-outline-danger" 
                                        title="Delete User">
                                         <i class="fas fa-trash"></i>
@@ -209,7 +209,7 @@
                 {% endif %}
             </p>
             {% if user.role == 'admin' or user.is_superuser %}
-            <a href="{% url 'user_create' %}" class="btn btn-primary">
+            <a href="{% url 'users:user_create' %}" class="btn btn-primary">
                 <i class="fas fa-user-plus me-2"></i>
                 Add First User
             </a>

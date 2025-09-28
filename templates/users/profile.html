@@ -14,7 +14,7 @@
                     <i class="fas fa-user me-2"></i>
                     Profile Information
                 </h6>
-                <a href="{% url 'user_edit' user.pk %}" class="btn btn-primary btn-sm">
+                <a href="{% url 'users:user_edit' user.pk %}" class="btn btn-primary btn-sm">
                     <i class="fas fa-edit me-1"></i>
                     Edit Profile
                 </a>
@@ -114,7 +114,7 @@
                         </div>
                     </div>
                     <div class="col-md-6 text-end">
-                        <a href="{% url 'password_change' %}" class="btn btn-outline-warning">
+                        <a href="{% url 'users:password_change' %}" class="btn btn-outline-warning">
                             <i class="fas fa-key me-2"></i>
                             Change Password
                         </a>
@@ -176,19 +176,19 @@
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <a href="{% url 'user_edit' user_obj.pk %}" class="btn btn-primary">
+                    <a href="{% url 'users:user_edit' user_obj.pk %}" class="btn btn-primary">
                         <i class="fas fa-edit me-2"></i>
                         Edit Profile
                     </a>
-                    <a href="{% url 'currency_preference' %}" class="btn btn-outline-success">
+                    <a href="{% url 'users:currency_preference' %}" class="btn btn-outline-success">
                         <i class="fas fa-coins me-2"></i>
                         Currency Settings
                     </a>
-                    <a href="{% url 'password_change' %}" class="btn btn-outline-warning">
+                    <a href="{% url 'users:password_change' %}" class="btn btn-outline-warning">
                         <i class="fas fa-key me-2"></i>
                         Change Password
                     </a>
-                    <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">
+                    <a href="{% url 'users:dashboard' %}" class="btn btn-outline-primary">
                         <i class="fas fa-tachometer-alt me-2"></i>
                         Dashboard
                     </a>
