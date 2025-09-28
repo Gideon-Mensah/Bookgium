@@ -352,7 +352,7 @@
                     link.addEventListener('click', function(e) {
                         e.preventDefault();
                         // Redirect to login page
-                        window.location.href = '{% url "login" %}';
+                        window.location.href = '{% url "users:login" %}';
                         return false;
                     });
                 });
