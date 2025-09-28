@@ -19,7 +19,6 @@ from django.urls import path, include
 from django.shortcuts import redirect
 from django.conf import settings
 from django.conf.urls.static import static
-from django.db import connection
 
 def home_redirect(request):
     """Redirect home page to dashboard if logged in, else to login"""
@@ -28,36 +27,22 @@ def home_redirect(request):
         if hasattr(request.user, 'role') and request.user.role == 'hr':
             return redirect('payroll:dashboard')
         return redirect('dashboard')
-    return redirect('login')
+    return redirect('users:login')
 
-# Multi-tenant URL patterns
-def get_urlpatterns():
-    """Return URL patterns based on current schema"""
-    if hasattr(connection, 'schema_name') and connection.schema_name == 'public':
-        # Public schema URLs (for tenant management)
-        return [
-            path('admin/', admin.site.urls),
-            path('clients/', include('clients.urls')),
-            path('', lambda request: redirect('/clients/')),  # Redirect to client management
-        ]
-    else:
-        # Tenant schema URLs (regular app functionality)
-        return [
-            path('admin/', admin.site.urls),
-            path('', home_redirect, name='home'),
-            path('users/', include('users.urls')),
-            path('accounts/', include('accounts.urls')),
-            path('clients/', include('clients.urls')),
-            path('invoices/', include('invoices.urls')),
-            path('reports/', include('reports.urls')),
-            path('payroll/', include('payroll.urls')),
-            path('audit/', include('audit.urls')),
-            path('settings/', include('settings.urls')),
-            path('help-chat/', include('help_chat.urls')),
-            path('ai-assistant/', include('ai_assistant.urls')),
-        ]
-
-urlpatterns = get_urlpatterns()
+# Unified URL patterns that work in both contexts
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', home_redirect, name='home'),
+    path('users/', include('users.urls')),
+    path('accounts/', include('accounts.urls')),
+    path('clients/', include('clients.urls')),
+    path('invoices/', include('invoices.urls')),
+    path('reports/', include('reports.urls')),
+    path('payroll/', include('payroll.urls')),
+    path('audit/', include('audit.urls')),
+    path('settings/', include('settings.urls')),
+    path('help-chat/', include('help_chat.urls')),
+]
 
 # Serve media files during development
 if settings.DEBUG:
