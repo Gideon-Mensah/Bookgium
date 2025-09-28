@@ -34,10 +34,36 @@ class Command(BaseCommand):
                     CREATE TABLE clients_client (
                         id SERIAL PRIMARY KEY,
                         schema_name VARCHAR(63) NOT NULL UNIQUE,
-                        name VARCHAR(100) NOT NULL,
+                        name VARCHAR(200) NOT NULL,
+                        slug VARCHAR(200) UNIQUE,
                         description TEXT,
+                        email VARCHAR(254) NOT NULL,
+                        phone VARCHAR(20),
+                        website VARCHAR(200),
+                        address_line1 VARCHAR(255),
+                        address_line2 VARCHAR(255),
+                        city VARCHAR(100),
+                        state VARCHAR(100),
+                        postal_code VARCHAR(20),
+                        country VARCHAR(100) DEFAULT 'United States',
+                        subscription_status VARCHAR(20) DEFAULT 'trial',
+                        plan_type VARCHAR(20) DEFAULT 'starter',
+                        paid_until DATE NOT NULL,
+                        on_trial BOOLEAN DEFAULT TRUE,
+                        trial_ends DATE,
+                        currency VARCHAR(3) DEFAULT 'USD',
+                        monthly_fee DECIMAL(10,2) DEFAULT 0.00,
+                        max_users INTEGER DEFAULT 5,
+                        max_invoices_per_month INTEGER DEFAULT 100,
+                        max_storage_gb INTEGER DEFAULT 1,
+                        is_active BOOLEAN DEFAULT TRUE,
+                        created_by_id INTEGER,
+                        account_manager_id INTEGER,
                         created_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                        primary_color VARCHAR(7) DEFAULT '#3498db',
+                        updated_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                        last_login TIMESTAMP WITH TIME ZONE,
+                        logo VARCHAR(100),
+                        primary_color VARCHAR(7) DEFAULT '#007bff',
                         notes TEXT
                     );
                 """)
@@ -49,7 +75,11 @@ class Command(BaseCommand):
                         id SERIAL PRIMARY KEY,
                         domain VARCHAR(253) NOT NULL UNIQUE,
                         tenant_id INTEGER NOT NULL REFERENCES clients_client(id) ON DELETE CASCADE,
-                        is_primary BOOLEAN NOT NULL DEFAULT FALSE
+                        is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+                        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                        ssl_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                        created_on TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                        updated_on TIMESTAMP WITH TIME ZONE DEFAULT NOW()
                     );
                 """)
                 
@@ -68,8 +98,19 @@ class Command(BaseCommand):
                 # Step 6: Insert default tenant
                 self.stdout.write('6. Creating default tenant...')
                 cursor.execute("""
-                    INSERT INTO clients_client (schema_name, name, description, created_on)
-                    VALUES ('bookgium', 'Bookgium Default', 'Default tenant for Bookgium', NOW());
+                    INSERT INTO clients_client (
+                        schema_name, name, slug, description, email, 
+                        paid_until, created_on
+                    )
+                    VALUES (
+                        'bookgium', 
+                        'Bookgium Default', 
+                        'bookgium-default',
+                        'Default tenant for Bookgium application', 
+                        'admin@bookgium.com',
+                        CURRENT_DATE + INTERVAL '1 year',
+                        NOW()
+                    );
                 """)
                 
                 # Step 7: Insert domain
