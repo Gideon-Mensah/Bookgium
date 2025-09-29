@@ -48,13 +48,7 @@ ALLOWED_HOSTS = []
 
 SHARED_APPS = [
     'django_tenants',  # Mandatory, should be first
-    'clients',  # Your tenant app, must come before Django's contrib.contenttypes
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    'clients',  # Only shared app that owns tenants/domains
 ]
 
 TENANT_APPS = [
@@ -64,8 +58,6 @@ TENANT_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    
-    # Your tenant-specific apps
     'users',
     'accounts',
     'invoices',
