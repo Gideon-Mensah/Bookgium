@@ -39,9 +39,9 @@ DATABASES = {
 if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
     DATABASES['default']['ENGINE'] = 'django_tenants.postgresql_backend'
 
-# Remove any SCHEMA setting - django-tenants handles schema switching per-request
-if 'SCHEMA' in DATABASES['default']:
-    del DATABASES['default']['SCHEMA']
+# CRITICAL: Remove any SCHEMA setting - django-tenants handles schema switching per-request
+# This was causing the "relation 'users_customuser' does not exist" error
+DATABASES['default'].pop('SCHEMA', None)  # Remove SCHEMA if it exists
 
 # Add database routers for multi-tenancy
 DATABASE_ROUTERS = (
