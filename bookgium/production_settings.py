@@ -39,6 +39,10 @@ DATABASES = {
 if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
     DATABASES['default']['ENGINE'] = 'django_tenants.postgresql_backend'
 
+# Remove any SCHEMA setting - django-tenants handles schema switching per-request
+if 'SCHEMA' in DATABASES['default']:
+    del DATABASES['default']['SCHEMA']
+
 # Add database routers for multi-tenancy
 DATABASE_ROUTERS = (
     'django_tenants.routers.TenantSyncRouter',
