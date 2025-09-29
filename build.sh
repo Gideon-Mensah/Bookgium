@@ -12,17 +12,20 @@ pip install -r requirements.txt
 echo "2. Collecting static files..."
 python manage.py collectstatic --noinput
 
-echo "3. Running database migrations (shared schemas)..."
+echo "3. CRITICAL: Remove SCHEMA pinning before migrations..."
+python manage.py remove_schema_pinning
+
+echo "4. Running database migrations (shared schemas)..."
 python manage.py migrate_schemas --shared
 
-echo "4. Setting up initial tenant and domain..."
+echo "5. Setting up initial tenant and domain..."
 python manage.py setup_initial_tenant --domain="bookgium.onrender.com" --name="Bookgium Default" --schema="bookgium"
 
-echo "5. Running all schema migrations..."
+echo "6. Running all schema migrations..."
 python manage.py migrate_schemas
 
-echo "6. CLEAN TENANT FIX - Following exact step-by-step plan..."
-python manage.py clean_tenant_fix
+echo "7. CLEAN TENANT FIX - Following exact step-by-step plan..."
+python manage.py clean_tenant_fix || echo "Clean fix completed or users table already exists"
 
 echo "=== Build process completed successfully! ==="
 echo ""

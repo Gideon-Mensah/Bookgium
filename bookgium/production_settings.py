@@ -43,6 +43,14 @@ if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
 # This was causing the "relation 'users_customuser' does not exist" error
 DATABASES['default'].pop('SCHEMA', None)  # Remove SCHEMA if it exists
 
+# DOUBLE CHECK: Force remove SCHEMA if dj_database_url added it
+if 'SCHEMA' in DATABASES['default']:
+    print(f"WARNING: SCHEMA was added back: {DATABASES['default']['SCHEMA']}")
+    del DATABASES['default']['SCHEMA'] 
+    print("FIXED: Removed SCHEMA setting again")
+
+print(f"DATABASE CONFIG: {DATABASES['default']}")  # Debug output
+
 # Add database routers for multi-tenancy
 DATABASE_ROUTERS = (
     'django_tenants.routers.TenantSyncRouter',
