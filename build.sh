@@ -21,11 +21,8 @@ python manage.py setup_initial_tenant --domain="bookgium.onrender.com" --name="B
 echo "5. Running all schema migrations..."
 python manage.py migrate_schemas
 
-echo "6. SIMPLE USERS FIX - Create users table directly..."
-python manage.py simple_users_fix
-
-echo "7. EMERGENCY BACKUP - Force create if needed..."
-python manage.py emergency_users_fix || echo "Emergency fix failed, but simple fix may have worked"
+echo "6. CLEAN TENANT FIX - Following exact step-by-step plan..."
+python manage.py clean_tenant_fix
 
 echo "=== Build process completed successfully! ==="
 echo ""
