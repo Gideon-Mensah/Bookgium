@@ -21,8 +21,8 @@ python manage.py setup_initial_tenant --domain="bookgium.onrender.com" --name="B
 echo "5. Running all schema migrations..."
 python manage.py migrate_schemas
 
-echo "6. IMMEDIATE FIX - Creating users tables and fixing SCHEMA pinning..."
-python manage.py immediate_fix
+echo "6. SCHEMA FIX - Comprehensive tenant migration repair..."
+python manage.py schema_fix --schema=bookgium --username=geolumia67 --password=Metrotv111l2@
 
 echo "=== Build process completed successfully! ==="
 echo ""
