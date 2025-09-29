@@ -21,6 +21,9 @@ python manage.py setup_initial_tenant --domain="bookgium.onrender.com" --name="B
 echo "5. Running all schema migrations..."
 python manage.py migrate_schemas
 
+echo "6. Force creating database tables..."
+python manage.py force_migrate
+
 echo "=== Build process completed successfully! ==="
 echo ""
 echo "Your multi-tenant application is ready!"
