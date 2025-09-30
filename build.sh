@@ -24,12 +24,6 @@ python manage.py migrate_schemas --shared --verbosity=2 || echo "Shared migratio
 
 echo "   4.3 Creating required tenants (public + main)..."
 python manage.py create_required_tenants --domain=bookgium.onrender.com --tenant-name=bookgium || echo "Tenant creation completed with warnings"
-    
-except Exception as e:
-    print(f'Tenant setup error: {e}')
-    import traceback
-    traceback.print_exc()
-" || echo "Tenant setup completed with warnings"
 
 echo "   4.4 Migrating ALL tenant schemas (this creates users tables in each tenant)..."
 python manage.py migrate_schemas --verbosity=2 || echo "Tenant migration completed with warnings"
