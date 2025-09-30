@@ -47,34 +47,34 @@ ALLOWED_HOSTS = []
 # Application definition
 
 SHARED_APPS = [
-    'django_tenants',  # Mandatory, should be first
-    'clients',  # Only shared app that owns tenants/domains
-    'django.contrib.contenttypes',  # shared
+    "django_tenants",
+    "clients",
+    "django.contrib.contenttypes",  # shared
 ]
 
 TENANT_APPS = [
-    'django.contrib.contenttypes',  # tenant too
-    'django.contrib.auth',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django.contrib.admin',
-    'users',
-    'accounts',
-    'invoices',
-    'reports',
-    'dashboard',
-    'settings',
-    'payroll',
-    'audit',
-    'help_chat',
+    "django.contrib.contenttypes",  # also tenant
+    "django.contrib.auth",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django.contrib.admin",
+    "users",
+    "accounts",
+    "invoices",
+    "reports",
+    "dashboard",
+    "settings",
+    "payroll",
+    "audit",
+    "help_chat",
 ]
 
-INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
+# IMPORTANT: INSTALLED_APPS must be built from SHARED + TENANT
+INSTALLED_APPS = list(SHARED_APPS) + [
+    app for app in TENANT_APPS if app not in SHARED_APPS
+]
 
-# Django-tenants configuration
-TENANT_MODEL = "clients.Client"
-TENANT_DOMAIN_MODEL = "clients.Domain"
 PUBLIC_SCHEMA_NAME = "public"
 
 MIDDLEWARE = [
