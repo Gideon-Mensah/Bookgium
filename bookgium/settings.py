@@ -46,6 +46,11 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
+# --- django-tenants setup ---
+TENANT_MODEL = "clients.Client"
+TENANT_DOMAIN_MODEL = "clients.Domain"
+PUBLIC_SCHEMA_NAME = "public"
+
 SHARED_APPS = [
     "django_tenants",
     "clients",
@@ -53,7 +58,7 @@ SHARED_APPS = [
 ]
 
 TENANT_APPS = [
-    "django.contrib.contenttypes",  # also tenant
+    "django.contrib.contenttypes",  # tenant too
     "django.contrib.auth",
     "django.contrib.sessions",
     "django.contrib.messages",
@@ -70,12 +75,8 @@ TENANT_APPS = [
     "help_chat",
 ]
 
-# IMPORTANT: INSTALLED_APPS must be built from SHARED + TENANT
-INSTALLED_APPS = list(SHARED_APPS) + [
-    app for app in TENANT_APPS if app not in SHARED_APPS
-]
-
-PUBLIC_SCHEMA_NAME = "public"
+# IMPORTANT: build INSTALLED_APPS from SHARED + TENANT (no duplicates)
+INSTALLED_APPS = list(SHARED_APPS) + [a for a in TENANT_APPS if a not in SHARED_APPS]
 
 MIDDLEWARE = [
     'django_tenants.middleware.main.TenantMainMiddleware',  # Must be first

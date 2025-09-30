@@ -8,6 +8,8 @@ from django_tenants.models import TenantMixin, DomainMixin
 class Client(TenantMixin):
     """Client organizations that use the multi-tenant system"""
     
+    auto_create_schema = False  # Manual schema creation for better control
+    
     SUBSCRIPTION_STATUS = [
         ('trial', 'Free Trial'),
         ('active', 'Active'),
