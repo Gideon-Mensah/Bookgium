@@ -29,13 +29,12 @@ def home_redirect(request):
         return redirect('dashboard')
     return redirect('users:login')
 
-# Unified URL patterns that work in both contexts
+# Unified URL patterns for single-tenant application
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home_redirect, name='home'),
     path('users/', include('users.urls')),
     path('accounts/', include('accounts.urls')),
-    path('clients/', include('clients.urls')),
     path('invoices/', include('invoices.urls')),
     path('reports/', include('reports.urls')),
     path('payroll/', include('payroll.urls')),

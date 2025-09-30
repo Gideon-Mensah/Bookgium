@@ -46,40 +46,25 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
-# --- django-tenants setup ---
-TENANT_MODEL = "clients.Client"
-TENANT_DOMAIN_MODEL = "clients.Domain"
-PUBLIC_SCHEMA_NAME = "public"
-
-SHARED_APPS = [
-    "django_tenants",
-    "clients",
-    "django.contrib.contenttypes",  # shared
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'users',
+    'accounts',
+    'invoices',
+    'reports',
+    'dashboard',
+    'settings',
+    'payroll',
+    'audit',
+    'help_chat',
 ]
-
-TENANT_APPS = [
-    "django.contrib.contenttypes",  # tenant too
-    "django.contrib.auth",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "django.contrib.admin",
-    "users",
-    "accounts",
-    "invoices",
-    "reports",
-    "dashboard",
-    "settings",
-    "payroll",
-    "audit",
-    "help_chat",
-]
-
-# IMPORTANT: build INSTALLED_APPS from SHARED + TENANT (no duplicates)
-INSTALLED_APPS = list(SHARED_APPS) + [a for a in TENANT_APPS if a not in SHARED_APPS]
 
 MIDDLEWARE = [
-    'django_tenants.middleware.main.TenantMainMiddleware',  # Must be first
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -106,7 +91,6 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'accounts.context_processors.currency_context',
                 'settings.context_processors.organization_context',
-                'clients.context_processors.tenant_context',  # Multi-tenant context
             ],
         },
     },
@@ -120,7 +104,7 @@ WSGI_APPLICATION = 'bookgium.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django_tenants.postgresql_backend',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'bookgium_db',
         'USER': 'postgres',
         'PASSWORD': 'password',
@@ -129,11 +113,7 @@ DATABASES = {
     }
 }
 
-DATABASE_ROUTERS = (
-    'django_tenants.routers.TenantSyncRouter',
-)
-
-# For local development with SQLite (not recommended for production multi-tenancy)
+# For local development with SQLite (uncomment if needed)
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',

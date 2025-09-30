@@ -1,5 +1,4 @@
 Django==5.2.6
-django-tenants==3.9.0
 sqlparse==0.5.3
 asgiref==3.9.1
 psycopg2-binary==2.9.10

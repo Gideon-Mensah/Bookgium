@@ -28,27 +28,14 @@ if RENDER_EXTERNAL_HOSTNAME:
 
 # DATABASE CONFIGURATION
 # Render provides PostgreSQL database URL via environment variable
-# Multi-tenant setup requires PostgreSQL
 db_config = dj_database_url.parse(config('DATABASE_URL'))
 
-# CRITICAL: Remove any SCHEMA setting before it even gets set
-# django-tenants handles schema switching per-request automatically
-db_config.pop('SCHEMA', None)  # Remove if dj_database_url added it
-db_config.pop('OPTIONS', None)  # Remove any options that might contain schema info
-
-# Set the correct multi-tenant backend
-db_config['ENGINE'] = 'django_tenants.postgresql_backend'
+# Set the standard PostgreSQL backend
+db_config['ENGINE'] = 'django.db.backends.postgresql'
 
 DATABASES = {
     'default': db_config
 }
-
-print(f"DATABASE CONFIG (SCHEMA removed): {DATABASES['default']}")  # Debug output
-
-# Add database routers for multi-tenancy
-DATABASE_ROUTERS = (
-    'django_tenants.routers.TenantSyncRouter',
-)
 
 # Enable connection pooling (recommended for production)
 DATABASES['default']['CONN_MAX_AGE'] = 600
