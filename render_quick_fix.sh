@@ -7,11 +7,23 @@ echo "=============================================="
 echo "1. Creating missing public tenant..."
 python manage.py shell -c "
 from clients.models import Client, Domain
+from django.utils import timezone
+from datetime import timedelta
 try:
     Client.objects.get(schema_name='public')
     print('   ✅ Public tenant already exists')
 except Client.DoesNotExist:
-    public_tenant = Client.objects.create(schema_name='public', name='Public Tenant')
+    public_tenant = Client.objects.create(
+        schema_name='public', 
+        name='Public Tenant',
+        slug='public',
+        email='admin@bookgium.com',
+        subscription_status='active',
+        plan_type='enterprise',
+        paid_until=timezone.now().date() + timedelta(days=365*10),
+        on_trial=False,
+        max_users=999999
+    )
     Domain.objects.create(domain='localhost', tenant=public_tenant, is_primary=True)
     print('   ✅ Public tenant created')
 "

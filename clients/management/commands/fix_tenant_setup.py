@@ -44,11 +44,21 @@ class Command(BaseCommand):
         except Client.DoesNotExist:
             pass
 
-        # Create public tenant
+        # Create public tenant with proper defaults
         self.stdout.write("   Creating public tenant...")
+        from django.utils import timezone
+        from datetime import timedelta
+        
         public_tenant = Client.objects.create(
             schema_name="public",
-            name="Public Tenant"
+            name="Public Tenant",
+            slug="public",
+            email="admin@bookgium.com",
+            subscription_status="active",
+            plan_type="enterprise",
+            paid_until=timezone.now().date() + timedelta(days=365*10),  # 10 years
+            on_trial=False,
+            max_users=999999,  # Unlimited for public
         )
         
         # Create domain for public tenant (optional but recommended)

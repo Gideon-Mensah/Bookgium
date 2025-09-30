@@ -117,6 +117,8 @@ class Client(TenantMixin):
     @property
     def is_subscription_expired(self):
         """Check if subscription has expired"""
+        if not self.paid_until:
+            return False  # No expiry date means no expiration
         return timezone.now().date() > self.paid_until
     
     @property
