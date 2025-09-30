@@ -29,27 +29,21 @@ if RENDER_EXTERNAL_HOSTNAME:
 # DATABASE CONFIGURATION
 # Render provides PostgreSQL database URL via environment variable
 # Multi-tenant setup requires PostgreSQL
+db_config = dj_database_url.parse(config('DATABASE_URL'))
+
+# CRITICAL: Remove any SCHEMA setting before it even gets set
+# django-tenants handles schema switching per-request automatically
+db_config.pop('SCHEMA', None)  # Remove if dj_database_url added it
+db_config.pop('OPTIONS', None)  # Remove any options that might contain schema info
+
+# Set the correct multi-tenant backend
+db_config['ENGINE'] = 'django_tenants.postgresql_backend'
+
 DATABASES = {
-    'default': dj_database_url.parse(
-        config('DATABASE_URL')
-    )
+    'default': db_config
 }
 
-# Ensure we're using the django-tenants PostgreSQL backend
-if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
-    DATABASES['default']['ENGINE'] = 'django_tenants.postgresql_backend'
-
-# CRITICAL: Remove any SCHEMA setting - django-tenants handles schema switching per-request
-# This was causing the "relation 'users_customuser' does not exist" error
-DATABASES['default'].pop('SCHEMA', None)  # Remove SCHEMA if it exists
-
-# DOUBLE CHECK: Force remove SCHEMA if dj_database_url added it
-if 'SCHEMA' in DATABASES['default']:
-    print(f"WARNING: SCHEMA was added back: {DATABASES['default']['SCHEMA']}")
-    del DATABASES['default']['SCHEMA'] 
-    print("FIXED: Removed SCHEMA setting again")
-
-print(f"DATABASE CONFIG: {DATABASES['default']}")  # Debug output
+print(f"DATABASE CONFIG (SCHEMA removed): {DATABASES['default']}")  # Debug output
 
 # Add database routers for multi-tenancy
 DATABASE_ROUTERS = (

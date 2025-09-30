@@ -15,42 +15,15 @@ python manage.py collectstatic --noinput
 echo "3. ENSURE POSTGRESQL CONSISTENCY - Fix database configuration..."
 python manage.py check_database_config || echo "Database config checked"
 
-echo "4. ROBUST DATABASE SETUP - Step-by-step with error handling..."
+echo "4. ROBUST MULTI-TENANT DATABASE SETUP - Step-by-step with error handling..."
 echo "   4.1 Making migrations for all apps..."
 python manage.py makemigrations --verbosity=2 || echo "Makemigrations completed with warnings"
 
-echo "   4.2 Migrating shared apps only..."
+echo "   4.2 Migrating SHARED apps only (django_tenants, clients)..."
 python manage.py migrate_schemas --shared --verbosity=2 || echo "Shared migration completed with warnings"
 
-echo "   4.3 Creating tenant and domain configuration..."
-python -c "
-import os, django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bookgium.settings')
-django.setup()
-from clients.models import Client, Domain
-
-try:
-    # Create the main tenant (NOT public - that's for shared resources)
-    print('Creating main bookgium tenant...')
-    client, created = Client.objects.get_or_create(
-        schema_name='bookgium',
-        defaults={
-            'name': 'Bookgium Main Tenant', 
-            'description': 'Main tenant for bookgium application'
-        }
-    )
-    print(f'Tenant setup: {\"Created\" if created else \"Exists\"} - {client.name} (schema: {client.schema_name})')
-    
-    # Create domain mapping to the tenant
-    print('Setting up domain mapping...')
-    domain, created = Domain.objects.get_or_create(
-        domain='bookgium.onrender.com',
-        defaults={'tenant': client, 'is_primary': True}
-    )
-    print(f'Domain setup: {\"Created\" if created else \"Exists\"} - {domain.domain} -> {domain.tenant.schema_name}')
-    
-    # Verify the connection
-    print(f'Verification: Domain {domain.domain} maps to tenant {domain.tenant.schema_name}')
+echo "   4.3 Creating required tenants (public + main)..."
+python manage.py create_required_tenants --domain=bookgium.onrender.com --tenant-name=bookgium || echo "Tenant creation completed with warnings"
     
 except Exception as e:
     print(f'Tenant setup error: {e}')
@@ -58,7 +31,7 @@ except Exception as e:
     traceback.print_exc()
 " || echo "Tenant setup completed with warnings"
 
-echo "   4.4 Migrating all tenant schemas..."
+echo "   4.4 Migrating ALL tenant schemas (this creates users tables in each tenant)..."
 python manage.py migrate_schemas --verbosity=2 || echo "Tenant migration completed with warnings"
 
 echo "   4.5 Ensuring users table exists in bookgium tenant..."
@@ -113,7 +86,7 @@ except Exception as e:
 echo "   4.6 Emergency users table creation if needed..."
 python manage.py emergency_create_users || echo "Emergency users setup completed"
 
-echo "   4.7 Creating superuser if not exists..."
+echo "   4.7 Creating superuser in bookgium tenant schema..."
 python -c "
 import os, django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bookgium.settings')
@@ -122,13 +95,20 @@ from django.contrib.auth import get_user_model
 from django_tenants.utils import schema_context
 
 try:
-    # Create superuser in the bookgium tenant schema (NOT public)
+    # CRITICAL: Create superuser in the bookgium tenant schema (NOT public)
     with schema_context('bookgium'):
         User = get_user_model()
         print('Creating superuser in bookgium tenant schema...')
+        print(f'Using AUTH_USER_MODEL: {User._meta.label}')
         
         if not User.objects.filter(username='geolumia67').exists():
-            user = User.objects.create_superuser('geolumia67', 'geolumia67@gmail.com', 'Metrotv111l2@')
+            user = User.objects.create_superuser(
+                username='geolumia67', 
+                email='geolumia67@gmail.com', 
+                password='Metrotv111l2@',
+                role='admin',  # CustomUser requires role field
+                preferred_currency='USD'  # CustomUser requires currency field
+            )
             print('✅ Superuser created successfully in bookgium schema')
         else:
             print('✅ Superuser already exists in bookgium schema')
@@ -140,7 +120,7 @@ try:
         # Test authentication query (this is what was failing before)
         test_user = User.objects.filter(username='geolumia67').first()
         if test_user:
-            print(f'🔍 Login test: User found - ID: {test_user.id}, Staff: {test_user.is_staff}')
+            print(f'🔍 Login test: User found - ID: {test_user.id}, Staff: {test_user.is_staff}, Currency: {test_user.preferred_currency}')
         else:
             print('❌ Login test: User not found - this would cause login errors!')
             
@@ -150,7 +130,10 @@ except Exception as e:
     traceback.print_exc()
 " || echo "Superuser setup completed with warnings"
 
-echo "   4.8 Verifying database state..."
+echo "   4.8 Verifying multi-tenant database state..."
+python manage.py verify_multitenant_setup || echo "Multi-tenant verification completed"
+
+echo "   4.9 Final database verification..."
 python manage.py verify_database || echo "Database verification completed"
 
 echo "=== Build process completed successfully! ==="
