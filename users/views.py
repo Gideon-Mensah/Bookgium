@@ -10,6 +10,7 @@ from django.http import HttpResponseForbidden
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.utils.decorators import method_decorator
+from django.db.models import Q
 from .models import CustomUser
 from .forms import UserCurrencyPreferenceForm
 from django.contrib.auth.forms import UserCreationForm
@@ -34,9 +35,9 @@ class CustomUserCreationForm(UserCreationForm):
     # sure that all the extra fields are stored correctly, and saved it if commit is true.
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.email = self.cleaned_data["email"]
-        user.first_name = self.cleaned_data["first_name"]
-        user.last_name = self.cleaned_data["last_name"]
+        user.email = self.cleaned_data["email"].lower().strip()
+        user.first_name = self.cleaned_data["first_name"].strip()
+        user.last_name = self.cleaned_data["last_name"].strip()
         user.role = self.cleaned_data["role"]
         if commit:
             user.save()
@@ -55,6 +56,17 @@ class CustomUserUpdateForm(forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
+class LimitedUserUpdateForm(forms.ModelForm):
+    """Limited form for regular users to update their own information"""
+    class Meta:
+        model = CustomUser
+        fields = ("first_name", "last_name", "email")
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
 # Helper Functions
 def is_admin(user):
     """Check if user has admin role"""
@@ -71,11 +83,15 @@ class CustomLoginView(LoginView):
     redirect_authenticated_user = True
     
     def get_success_url(self):
-        return reverse_lazy('dashboard')
+        return reverse_lazy('users:dashboard')
     
     def form_valid(self, form):
         messages.success(self.request, f'Welcome back, {form.get_user().get_full_name() or form.get_user().username}!')
         return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(self.request, 'Please check your username and password and try again.')
+        return super().form_invalid(form)
 
 class CustomLogoutView(LogoutView):
     """Custom logout view"""
@@ -85,7 +101,7 @@ class CustomLogoutView(LogoutView):
         """Handle GET request for logout"""
         if request.user.is_authenticated:
             messages.success(request, 'You have been successfully logged out.')
-        return super().post(request, *args, **kwargs)  # Use post method to actually logout
+        return super().get(request, *args, **kwargs)
     
     def post(self, request, *args, **kwargs):
         """Handle POST request for logout"""
@@ -95,7 +111,7 @@ class CustomLogoutView(LogoutView):
     
     def get_next_page(self):
         """Override to ensure redirect to login page"""
-        return reverse_lazy('login')
+        return reverse_lazy('users:login')
 
 # User Management Views
 @method_decorator(never_cache, name='dispatch')
@@ -104,7 +120,7 @@ class UserCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = CustomUser
     form_class = CustomUserCreationForm
     template_name = 'users/user_form.html'
-    success_url = reverse_lazy('user_list')
+    success_url = reverse_lazy('users:user_list')
     
     def test_func(self):
         return is_admin(self.request.user)
@@ -131,20 +147,20 @@ class UserListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return is_admin_or_accountant(self.request.user)
     
     def get_queryset(self):
-        queryset = CustomUser.objects.all().order_by('username')
+        queryset = CustomUser.objects.only(
+            'id', 'username', 'first_name', 'last_name', 
+            'email', 'role', 'is_active', 'date_joined'
+        ).order_by('username')
         search = self.request.GET.get('search')
         role_filter = self.request.GET.get('role')
         status_filter = self.request.GET.get('status')
         
         if search:
             queryset = queryset.filter(
-                username__icontains=search
-            ) | queryset.filter(
-                first_name__icontains=search
-            ) | queryset.filter(
-                last_name__icontains=search
-            ) | queryset.filter(
-                email__icontains=search
+                Q(username__icontains=search) |
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(email__icontains=search)
             )
         
         if role_filter and role_filter != 'all':
@@ -194,16 +210,7 @@ class UserUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         if is_admin(self.request.user):
             return CustomUserUpdateForm
         else:
-            # Limited form for regular users
-            class LimitedUserUpdateForm(forms.ModelForm):
-                class Meta:
-                    model = CustomUser
-                    fields = ("first_name", "last_name", "email")
-                    widgets = {
-                        'first_name': forms.TextInput(attrs={'class': 'form-control'}),
-                        'last_name': forms.TextInput(attrs={'class': 'form-control'}),
-                        'email': forms.EmailInput(attrs={'class': 'form-control'}),
-                    }
+            # Use the module-level form for regular users
             return LimitedUserUpdateForm
     
     def form_valid(self, form):
@@ -211,7 +218,7 @@ class UserUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return super().form_valid(form)
     
     def get_success_url(self):
-        return reverse('user_detail', kwargs={'pk': self.object.pk})
+        return reverse('users:user_detail', kwargs={'pk': self.object.pk})
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -224,7 +231,7 @@ class UserDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     """View to delete users (admin only)"""
     model = CustomUser
     template_name = 'users/user_confirm_delete.html'
-    success_url = reverse_lazy('user_list')
+    success_url = reverse_lazy('users:user_list')
     context_object_name = 'user_obj'
     
     def test_func(self):
@@ -234,7 +241,12 @@ class UserDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         user = self.get_object()
         if user == request.user:
             messages.error(request, "You cannot delete your own account.")
-            return redirect('user_list')
+            return redirect('users:user_list')
+        
+        # Prevent deletion of the only superuser
+        if user.is_superuser and CustomUser.objects.filter(is_superuser=True).count() == 1:
+            messages.error(request, "You cannot delete the only superuser.")
+            return redirect('users:user_list')
         
         username = user.username
         response = super().delete(request, *args, **kwargs)
@@ -293,7 +305,7 @@ def toggle_user_status(request, pk):
         status = "activated" if user.is_active else "deactivated"
         messages.success(request, f'User "{user.username}" has been {status}.')
     
-    return redirect('user_list')
+    return redirect('users:user_list')
 
 @method_decorator(never_cache, name='dispatch')
 class CurrencyPreferenceView(LoginRequiredMixin, UpdateView):
@@ -327,7 +339,7 @@ class CurrencyPreferenceView(LoginRequiredMixin, UpdateView):
         return response
     
     def get_success_url(self):
-        return reverse('currency_preference')
+        return reverse('users:currency_preference')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
