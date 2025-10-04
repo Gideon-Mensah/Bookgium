@@ -53,10 +53,12 @@ except Exception as e:
     print(f'Table check error: {e}')
 "
 
-echo "5. Making migrations..."
+echo "5. Making migrations (ensuring users app is included)..."
+python manage.py makemigrations users --verbosity=2
 python manage.py makemigrations --verbosity=2
 
-echo "6. Running database migrations..."
+echo "6. Running database migrations (users first, then all apps)..."
+python manage.py migrate users --verbosity=2
 python manage.py migrate --verbosity=2
 
 echo "7. Verifying table creation..."
