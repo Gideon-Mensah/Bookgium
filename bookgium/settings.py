@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'users',
+    'clients',
     'accounts',
     'invoices',
     'reports',
@@ -62,6 +63,7 @@ INSTALLED_APPS = [
     'payroll',
     'audit',
     'help_chat',
+    'ai_assistant',
 ]
 
 MIDDLEWARE = [
@@ -102,24 +104,25 @@ WSGI_APPLICATION = 'bookgium.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'bookgium_db',
-        'USER': 'postgres',
-        'PASSWORD': 'password',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-}
-
-# For local development with SQLite (uncomment if needed)
+# For production/Render - PostgreSQL
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'bookgium_db',
+#         'USER': 'postgres',
+#         'PASSWORD': 'password',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
 #     }
 # }
+
+# For local development with SQLite
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 
 
 # Password validation

@@ -26,7 +26,7 @@ def home_redirect(request):
         # Redirect HR users directly to payroll
         if hasattr(request.user, 'role') and request.user.role == 'hr':
             return redirect('payroll:dashboard')
-        return redirect('dashboard')
+        return redirect('users:dashboard')
     return redirect('users:login')
 
 # Unified URL patterns for single-tenant application
@@ -34,6 +34,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home_redirect, name='home'),
     path('users/', include('users.urls')),
+    path('clients/', include('clients.urls')),
     path('accounts/', include('accounts.urls')),
     path('invoices/', include('invoices.urls')),
     path('reports/', include('reports.urls')),
@@ -41,6 +42,7 @@ urlpatterns = [
     path('audit/', include('audit.urls')),
     path('settings/', include('settings.urls')),
     path('help-chat/', include('help_chat.urls')),
+    path('ai-assistant/', include('ai_assistant.urls')),
 ]
 
 # Serve media files during development
