@@ -6,8 +6,7 @@ services:
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn bookgium.wsgi:application --bind 0.0.0.0:$PORT
-    preDeployCommand: python manage.py collectstatic --noinput --settings=bookgium.production_settings
-    postDeployCommand: python manage.py migrate --noinput --settings=bookgium.production_settings
+    preDeployCommand: python manage.py collectstatic --noinput --settings=bookgium.production_settings && python manage.py migrate --noinput --settings=bookgium.production_settings
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: bookgium.production_settings
