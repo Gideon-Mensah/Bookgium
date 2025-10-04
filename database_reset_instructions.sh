@@ -1,0 +1,26 @@
+#!/bin/bash
+# Database Reset Script for Render
+# Run these commands in the Render shell
+
+echo "🔄 Database Reset Instructions for Render"
+echo "=========================================="
+echo ""
+echo "1. Open Render Dashboard -> Your Service -> Shell"
+echo ""
+echo "2. Reset the database schema (⚠️ DESTROYS ALL DATA):"
+echo "   python manage.py dbshell"
+echo ""
+echo "3. In the psql prompt, run:"
+echo "   DROP SCHEMA public CASCADE;"
+echo "   CREATE SCHEMA public;"
+echo "   GRANT ALL ON SCHEMA public TO geolumia;"
+echo "   GRANT ALL ON SCHEMA public TO public;"
+echo "   \\q"
+echo ""
+echo "4. Apply migrations cleanly:"
+echo "   python manage.py migrate --noinput"
+echo ""
+echo "5. Create superuser:"
+echo "   python manage.py createsuperuser"
+echo ""
+echo "✅ render.yaml is now configured for automatic migrations on future deployments"
