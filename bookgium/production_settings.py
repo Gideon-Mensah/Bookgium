@@ -157,11 +157,6 @@ DATABASES['default'].update({
     },
 })
 
-# Add client-specific context processors if needed
-TEMPLATES[0]['OPTIONS']['context_processors'].extend([
-    'clients.context_processors.client_stats',  # Add if you create this
-])
-
 print("=== Production Settings Loaded ===")
 print(f"DEBUG: {DEBUG}")
 print(f"Database: {'PostgreSQL' if 'postgres' in str(DATABASES['default']['ENGINE']) else 'SQLite'}")

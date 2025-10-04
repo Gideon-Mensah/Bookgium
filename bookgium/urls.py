@@ -19,6 +19,7 @@ from django.urls import path, include
 from django.shortcuts import redirect
 from django.conf import settings
 from django.conf.urls.static import static
+from .health import health_check, deployment_info
 
 def home_redirect(request):
     """Redirect home page to dashboard if logged in, else to login"""
@@ -31,6 +32,11 @@ def home_redirect(request):
 
 # Unified URL patterns for single-tenant application
 urlpatterns = [
+    # Health check endpoints
+    path('health/', health_check, name='health_check'),
+    path('deployment-info/', deployment_info, name='deployment_info'),
+    
+    # Application URLs
     path('admin/', admin.site.urls),
     path('', home_redirect, name='home'),
     path('users/', include('users.urls')),

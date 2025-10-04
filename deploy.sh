@@ -12,11 +12,11 @@ pip install -r requirements.txt
 
 # Collect static files
 echo "🎨 Collecting static files..."
-python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput --settings=bookgium.production_settings
 
 # Run migrations
 echo "🗄️ Running migrations..."
-python manage.py migrate --noinput
+python manage.py migrate --noinput --settings=bookgium.production_settings
 
 # Create superuser if not exists
 echo "👤 Setting up superuser..."

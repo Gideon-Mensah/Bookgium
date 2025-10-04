@@ -11,6 +11,10 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bookgium.settings')
+# Use production settings if RENDER environment is detected, otherwise use development
+if os.environ.get('RENDER'):
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bookgium.production_settings')
+else:
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bookgium.settings')
 
 application = get_wsgi_application()
