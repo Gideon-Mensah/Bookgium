@@ -97,9 +97,27 @@ CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=True, cast=bool)
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
-# CORS SETTINGS (if you have a frontend application)
-CORS_ALLOWED_ORIGINS = [
-    "https://your-frontend-domain.com",  # Replace with your frontend domain
+# INSTALLED APPS - Ensure all apps are included for production
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    
+    # Local apps
+    'users',
+    'clients',  # Client management system
+    'accounts',
+    'invoices',
+    'reports',
+    'payroll',
+    'dashboard',
+    'audit',
+    'help_chat',
+    'ai_assistant',
+    'settings',
 ]
 
 # CACHE CONFIGURATION (optional - for better performance)
@@ -118,8 +136,35 @@ CACHES = {
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db' if config('REDIS_URL', default=None) else 'django.contrib.sessions.backends.db'
 SESSION_CACHE_ALIAS = 'default'
 
+# CORS SETTINGS (if you have a frontend application)
+CORS_ALLOWED_ORIGINS = [
+    "https://your-frontend-domain.com",  # Replace with your frontend domain
+]
+
+# CLIENT MANAGEMENT SETTINGS
+# Ensure client-related media uploads work properly
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
+# PERFORMANCE OPTIMIZATIONS for Client Management
+# Database connection optimization
+DATABASES['default'].update({
+    'CONN_MAX_AGE': 600,
+    'OPTIONS': {
+        'MAX_CONNS': 20,
+        'charset': 'utf8mb4',
+    },
+})
+
+# Add client-specific context processors if needed
+TEMPLATES[0]['OPTIONS']['context_processors'].extend([
+    'clients.context_processors.client_stats',  # Add if you create this
+])
+
 print("=== Production Settings Loaded ===")
 print(f"DEBUG: {DEBUG}")
 print(f"Database: {'PostgreSQL' if 'postgres' in str(DATABASES['default']['ENGINE']) else 'SQLite'}")
 print(f"Static files: {STATIC_ROOT}")
+print(f"Apps installed: {len(INSTALLED_APPS)}")
 print("=====================================")

@@ -2,6 +2,35 @@ services:
   - type: web
     name: bookgium
     env: python
+    region: oregon
+    plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn bookgium.wsgi
+    startCommand: gunicorn bookgium.wsgi:application --bind 0.0.0.0:$PORT
+    preDeployCommand: python manage.py collectstatic --noinput
     postDeployCommand: python manage.py migrate --noinput
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: bookgium.production_settings
+      - key: PYTHON_VERSION
+        value: 3.11.4
+      - key: DEBUG
+        value: false
+      - key: SECURE_SSL_REDIRECT
+        value: true
+      - key: SESSION_COOKIE_SECURE
+        value: true
+      - key: CSRF_COOKIE_SECURE
+        value: true
+
+  - type: redis
+    name: bookgium-redis
+    region: oregon
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+databases:
+  - name: bookgium-db
+    databaseName: bookgium_db
+    user: bookgium_user
+    region: oregon
+    plan: free
