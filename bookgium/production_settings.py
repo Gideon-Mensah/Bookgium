@@ -28,13 +28,8 @@ if RENDER_EXTERNAL_HOSTNAME:
 
 # DATABASE CONFIGURATION
 # Render provides PostgreSQL database URL via environment variable
-db_config = dj_database_url.parse(config('DATABASE_URL'))
-
-# Set the standard PostgreSQL backend
-db_config['ENGINE'] = 'django.db.backends.postgresql'
-
 DATABASES = {
-    'default': db_config
+    'default': dj_database_url.parse(config('DATABASE_URL'))
 }
 
 # Enable connection pooling (recommended for production)
@@ -146,16 +141,6 @@ CORS_ALLOWED_ORIGINS = [
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
-
-# PERFORMANCE OPTIMIZATIONS for Client Management
-# Database connection optimization
-DATABASES['default'].update({
-    'CONN_MAX_AGE': 600,
-    'OPTIONS': {
-        'MAX_CONNS': 20,
-        'charset': 'utf8mb4',
-    },
-})
 
 print("=== Production Settings Loaded ===")
 print(f"DEBUG: {DEBUG}")
