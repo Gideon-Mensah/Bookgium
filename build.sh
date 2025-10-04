@@ -12,13 +12,84 @@ pip install -r requirements.txt
 echo "2. Collecting static files..."
 python manage.py collectstatic --noinput
 
-echo "3. Making migrations..."
+echo "3. Checking database connection..."
+python -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bookgium.settings')
+django.setup()
+from django.db import connection
+
+try:
+    with connection.cursor() as cursor:
+        cursor.execute('SELECT 1;')
+        print('✅ Database connection successful')
+except Exception as e:
+    print(f'❌ Database connection failed: {e}')
+    raise
+"
+
+echo "4. Checking for existing users table..."
+python -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bookgium.settings')
+django.setup()
+from django.db import connection
+
+try:
+    with connection.cursor() as cursor:
+        cursor.execute(\"\"\"
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = 'users_customuser'
+            );
+        \"\"\")
+        table_exists = cursor.fetchone()[0]
+        
+        if table_exists:
+            print('✅ users_customuser table exists')
+        else:
+            print('❌ users_customuser table missing - will create')
+except Exception as e:
+    print(f'Table check error: {e}')
+"
+
+echo "5. Making migrations..."
 python manage.py makemigrations --verbosity=2
 
-echo "4. Running database migrations..."
+echo "6. Running database migrations..."
 python manage.py migrate --verbosity=2
 
-echo "5. Creating superuser..."
+echo "7. Verifying table creation..."
+python -c "
+import os, django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bookgium.settings')
+django.setup()
+from django.db import connection
+
+try:
+    with connection.cursor() as cursor:
+        cursor.execute(\"\"\"
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = 'users_customuser'
+            );
+        \"\"\")
+        table_exists = cursor.fetchone()[0]
+        
+        if table_exists:
+            print('✅ users_customuser table verified')
+            cursor.execute('SELECT COUNT(*) FROM users_customuser;')
+            count = cursor.fetchone()[0]
+            print(f'📊 Current user count: {count}')
+        else:
+            print('❌ users_customuser table still missing!')
+            raise Exception('Migration failed - table not created')
+except Exception as e:
+    print(f'Verification error: {e}')
+    raise
+"
+
+echo "8. Creating superuser..."
 python -c "
 import os, django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bookgium.settings')
