@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ client.name }} - Client Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-building me-2"></i>
+                    {{ client.name }}
+                    {% if client.status == 'active' %}
+                        <span class="badge bg-success ms-2">{{ client.get_status_display }}</span>
+                    {% elif client.status == 'prospective' %}
+                        <span class="badge bg-warning ms-2">{{ client.get_status_display }}</span>
+                    {% elif client.status == 'inactive' %}
+                        <span class="badge bg-secondary ms-2">{{ client.get_status_display }}</span>
+                    {% else %}
+                        <span class="badge bg-dark ms-2">{{ client.get_status_display }}</span>
+                    {% endif %}
+                </h2>
+                <div>
+                    <a href="{% url 'clients:list' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Back to List
+                    </a>
+                    <a href="{% url 'clients:edit' client.pk %}" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>
+                        Edit Client
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Client Information -->
+        <div class="col-lg-8">
+            <!-- Basic Information -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Basic Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Name:</dt>
+                                <dd class="col-sm-8">{{ client.name }}</dd>
+                                
+                                <dt class="col-sm-4">Email:</dt>
+                                <dd class="col-sm-8">
+                                    <a href="mailto:{{ client.email }}">{{ client.email }}</a>
+                                </dd>
+                                
+                                {% if client.phone %}
+                                <dt class="col-sm-4">Phone:</dt>
+                                <dd class="col-sm-8">
+                                    <a href="tel:{{ client.phone }}">{{ client.phone }}</a>
+                                </dd>
+                                {% endif %}
+                                
+                                {% if client.website %}
+                                <dt class="col-sm-4">Website:</dt>
+                                <dd class="col-sm-8">
+                                    <a href="{{ client.website }}" target="_blank" rel="noopener">
+                                        {{ client.website }} <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </dd>
+                                {% endif %}
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Type:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-secondary">{{ client.get_company_type_display }}</span>
+                                </dd>
+                                
+                                {% if client.registration_number %}
+                                <dt class="col-sm-4">Registration:</dt>
+                                <dd class="col-sm-8">{{ client.registration_number }}</dd>
+                                {% endif %}
+                                
+                                {% if client.tax_id %}
+                                <dt class="col-sm-4">Tax ID:</dt>
+                                <dd class="col-sm-8">{{ client.tax_id }}</dd>
+                                {% endif %}
+                                
+                                <dt class="col-sm-4">Created:</dt>
+                                <dd class="col-sm-8">
+                                    {{ client.created_at|date:"M d, Y" }}
+                                    {% if client.created_by %}
+                                        <br><small class="text-muted">by {{ client.created_by.get_full_name|default:client.created_by.username }}</small>
+                                    {% endif %}
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            {% if client.contact_person or client.contact_title %}
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        Contact Person
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        {% if client.contact_person %}
+                        <dt class="col-sm-3">Name:</dt>
+                        <dd class="col-sm-9">{{ client.contact_person }}</dd>
+                        {% endif %}
+                        
+                        {% if client.contact_title %}
+                        <dt class="col-sm-3">Title:</dt>
+                        <dd class="col-sm-9">{{ client.contact_title }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Address Information -->
+            {% if client.get_full_address %}
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-map-marker-alt me-2"></i>
+                        Address
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <address>
+                        {% if client.address_line1 %}{{ client.address_line1 }}<br>{% endif %}
+                        {% if client.address_line2 %}{{ client.address_line2 }}<br>{% endif %}
+                        {% if client.city %}{{ client.city }}{% endif %}{% if client.state %}, {{ client.state }}{% endif %} {% if client.postal_code %}{{ client.postal_code }}{% endif %}
+                        {% if client.country %}<br>{{ client.country }}{% endif %}
+                    </address>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Business Information -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-briefcase me-2"></i>
+                        Business Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-5">Credit Limit:</dt>
+                                <dd class="col-sm-7">${{ client.credit_limit|floatformat:2 }}</dd>
+                                
+                                {% if client.payment_terms %}
+                                <dt class="col-sm-5">Payment Terms:</dt>
+                                <dd class="col-sm-7">{{ client.payment_terms }}</dd>
+                                {% endif %}
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Last Updated:</dt>
+                                <dd class="col-sm-8">{{ client.updated_at|date:"M d, Y H:i" }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            {% if client.notes %}
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-sticky-note me-2"></i>
+                        Notes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ client.notes|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Client Notes Section -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comments me-2"></i>
+                        Client Notes & History
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Add Note Form -->
+                    <form method="post" action="{% url 'clients:add_note' client.pk %}" class="mb-4">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-4">
+                                {{ note_form.title }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ note_form.content }}
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-plus me-2"></i>
+                                    Add Note
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Notes List -->
+                    {% if recent_notes %}
+                        <div class="timeline">
+                            {% for note in recent_notes %}
+                            <div class="border rounded p-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ note.title }}</h6>
+                                        <p class="mb-2">{{ note.content|linebreaks }}</p>
+                                        <small class="text-muted">
+                                            <i class="fas fa-user me-1"></i>
+                                            {{ note.created_by.get_full_name|default:note.created_by.username }}
+                                            <i class="fas fa-clock ms-2 me-1"></i>
+                                            {{ note.created_at|date:"M d, Y H:i" }}
+                                        </small>
+                                    </div>
+                                    <div class="ms-3">
+                                        <a href="{% url 'clients:delete_note' client.pk note.pk %}" 
+                                           class="btn btn-sm btn-outline-danger"
+                                           onclick="return confirm('Are you sure you want to delete this note?')"
+                                           title="Delete Note">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No notes yet. Add the first note above.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions Sidebar -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'clients:edit' client.pk %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i>
+                            Edit Client
+                        </a>
+                        
+                        <a href="{% url 'clients:toggle_status' client.pk %}" 
+                           class="btn btn-warning"
+                           onclick="return confirm('Are you sure you want to change the status of this client?')">
+                            <i class="fas fa-toggle-on me-2"></i>
+                            {% if client.status == 'active' %}Deactivate{% else %}Activate{% endif %} Client
+                        </a>
+                        
+                        <hr>
+                        
+                        <a href="mailto:{{ client.email }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-envelope me-2"></i>
+                            Send Email
+                        </a>
+                        
+                        {% if client.phone %}
+                        <a href="tel:{{ client.phone }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-phone me-2"></i>
+                            Call Client
+                        </a>
+                        {% endif %}
+                        
+                        {% if client.website %}
+                        <a href="{{ client.website }}" target="_blank" rel="noopener" class="btn btn-outline-secondary">
+                            <i class="fas fa-globe me-2"></i>
+                            Visit Website
+                        </a>
+                        {% endif %}
+                        
+                        <hr>
+                        
+                        <a href="{% url 'clients:delete' client.pk %}" 
+                           class="btn btn-outline-danger"
+                           onclick="return confirm('Are you sure you want to delete this client? This action cannot be undone.')">
+                            <i class="fas fa-trash me-2"></i>
+                            Delete Client
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Client Summary -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Client Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-primary">{{ recent_notes|length }}</h4>
+                            <small class="text-muted">Notes</small>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">${{ client.credit_limit|floatformat:2 }}</h4>
+                            <small class="text-muted">Credit Limit</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

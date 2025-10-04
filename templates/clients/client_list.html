@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Clients List{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-users me-2"></i>
+                    Clients Management
+                </h2>
+                <div>
+                    <a href="{% url 'clients:dashboard' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Dashboard
+                    </a>
+                    <a href="{% url 'clients:create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        Add New Client
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            {{ search_form.search }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ search_form.status }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ search_form.company_type }}
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>
+                                Search
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clients Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Clients List
+                        {% if clients %}
+                            <span class="badge bg-primary ms-2">{{ page_obj.paginator.count }} total</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if clients %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Client</th>
+                                        <th>Contact Info</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for client in clients %}
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>{{ client.name }}</strong>
+                                                {% if client.contact_person %}
+                                                    <br><small class="text-muted">
+                                                        Contact: {{ client.display_contact }}
+                                                    </small>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <i class="fas fa-envelope me-1"></i>{{ client.email }}
+                                                {% if client.phone %}
+                                                    <br><i class="fas fa-phone me-1"></i>{{ client.phone }}
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {{ client.get_company_type_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if client.status == 'active' %}
+                                                <span class="badge bg-success">{{ client.get_status_display }}</span>
+                                            {% elif client.status == 'prospective' %}
+                                                <span class="badge bg-warning">{{ client.get_status_display }}</span>
+                                            {% elif client.status == 'inactive' %}
+                                                <span class="badge bg-secondary">{{ client.get_status_display }}</span>
+                                            {% else %}
+                                                <span class="badge bg-dark">{{ client.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ client.created_at|date:"M d, Y" }}
+                                            {% if client.created_by %}
+                                                <br><small class="text-muted">by {{ client.created_by.get_full_name|default:client.created_by.username }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'clients:detail' client.pk %}" 
+                                                   class="btn btn-sm btn-outline-primary"
+                                                   title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'clients:edit' client.pk %}" 
+                                                   class="btn btn-sm btn-outline-secondary"
+                                                   title="Edit Client">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'clients:toggle_status' client.pk %}" 
+                                                   class="btn btn-sm btn-outline-warning"
+                                                   title="Toggle Status"
+                                                   onclick="return confirm('Are you sure you want to change the status of this client?')">
+                                                    <i class="fas fa-toggle-on"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if is_paginated %}
+                        <nav aria-label="Clients pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if company_type_filter != 'all' %}&company_type={{ company_type_filter }}{% endif %}">First</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if company_type_filter != 'all' %}&company_type={{ company_type_filter }}{% endif %}">Previous</a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if company_type_filter != 'all' %}&company_type={{ company_type_filter }}{% endif %}">Next</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if company_type_filter != 'all' %}&company_type={{ company_type_filter }}{% endif %}">Last</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-5x text-muted mb-4"></i>
+                            {% if search_query or status_filter != 'all' or company_type_filter != 'all' %}
+                                <h4 class="text-muted">No clients found</h4>
+                                <p class="text-muted">Try adjusting your search criteria or filters.</p>
+                                <a href="{% url 'clients:list' %}" class="btn btn-secondary me-2">
+                                    <i class="fas fa-times me-2"></i>
+                                    Clear Filters
+                                </a>
+                            {% else %}
+                                <h4 class="text-muted">No clients yet</h4>
+                                <p class="text-muted">Get started by adding your first client to the system.</p>
+                            {% endif %}
+                            <a href="{% url 'clients:create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>
+                                Add New Client
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

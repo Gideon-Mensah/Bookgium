@@ -5,25 +5,226 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row">
+    <!-- Header Section -->
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="fas fa-building me-2"></i>
-                        {{ title }}
-                    </h4>
-                </div>
-                <div class="card-body text-center py-5">
-                    <div class="my-4">
-                        <i class="fas fa-building fa-5x text-muted mb-4"></i>
-                        <h3 class="text-muted">{{ message }}</h3>
-                        <p class="text-muted">This feature is under development and will be available soon.</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-building me-2"></i>
+                    {{ title }}
+                </h2>
+                <a href="{% url 'clients:create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>
+                    Add New Client
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-0">Total Clients</h6>
+                            <h2 class="mb-0">{{ total_clients }}</h2>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
                     </div>
-                    <a href="{% url 'users:dashboard' %}" class="btn btn-primary">
-                        <i class="fas fa-arrow-left me-2"></i>
-                        Back to Dashboard
-                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-0">Active Clients</h6>
+                            <h2 class="mb-0">{{ active_clients }}</h2>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-0">Prospective</h6>
+                            <h2 class="mb-0">{{ prospective_clients }}</h2>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-0">View All</h6>
+                            <small>Manage Clients</small>
+                        </div>
+                        <div class="ms-3">
+                            <a href="{% url 'clients:list' %}" class="text-white">
+                                <i class="fas fa-arrow-right fa-2x"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Clients -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-clock me-2"></i>
+                            Recent Clients
+                        </h5>
+                        <a href="{% url 'clients:list' %}" class="btn btn-sm btn-outline-primary">
+                            View All
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if recent_clients %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for client in recent_clients %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ client.name }}</strong>
+                                            {% if client.contact_person %}
+                                                <br><small class="text-muted">{{ client.contact_person }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ client.email }}</td>
+                                        <td>
+                                            {% if client.status == 'active' %}
+                                                <span class="badge bg-success">{{ client.get_status_display }}</span>
+                                            {% elif client.status == 'prospective' %}
+                                                <span class="badge bg-warning">{{ client.get_status_display }}</span>
+                                            {% elif client.status == 'inactive' %}
+                                                <span class="badge bg-secondary">{{ client.get_status_display }}</span>
+                                            {% else %}
+                                                <span class="badge bg-dark">{{ client.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ client.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'clients:detail' client.pk %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No clients found</h5>
+                            <p class="text-muted">Get started by adding your first client.</p>
+                            <a href="{% url 'clients:create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>
+                                Add First Client
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Distribution -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Status Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if status_stats %}
+                        {% for stat in status_stats %}
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <span class="fw-bold text-capitalize">{{ stat.status }}</span>
+                            </div>
+                            <div>
+                                <span class="badge 
+                                    {% if stat.status == 'active' %}bg-success
+                                    {% elif stat.status == 'prospective' %}bg-warning
+                                    {% elif stat.status == 'inactive' %}bg-secondary
+                                    {% else %}bg-dark{% endif %}
+                                ">
+                                    {{ stat.count }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No data available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'clients:create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>
+                            Add New Client
+                        </a>
+                        <a href="{% url 'clients:list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-list me-2"></i>
+                            View All Clients
+                        </a>
+                        <a href="{% url 'users:dashboard' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Back to Main Dashboard
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
