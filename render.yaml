@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: bookgium
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn bookgium.wsgi
+    postDeployCommand: python manage.py migrate --noinput
